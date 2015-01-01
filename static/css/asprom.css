@@ -1,0 +1,71 @@
+.ml10 {
+    margin-left: 10px;
+}
+
+.infobox {
+	margin-top: 15px;
+	margin-bottom: 10px !important;
+}
+
+.glyphicon {
+	text-shadow: 0 0 1px black;	
+}
+.glyphicon-ok {
+	color: #00EE00;	
+}
+
+.glyphicon-remove {
+	color: #FF3300;	
+}
+
+.glyphicon-star {
+	color: #FFCC00;	
+}
+
+.glyphicon-search {
+	color: #0000EE;	
+}
+.glyphicon-edit {
+	color: #0000EE;	
+}
+
+
+.row-critical, .row-critical input {
+	background-color: #FFAAAA;
+}
+
+.row-warning, .row-warning input {
+	background-color: #FFFFAA;
+}
+
+.nopad {
+	vertical-align: middle;
+	padding: 0 !important;
+}
+
+.nopad input {
+	box-shadow: none !important;
+	border-radius: none  !important;
+	border: 0;
+
+}
+
+toggle {
+	cursor: pointer;
+}
+
+.danger-2 {
+	background-image: linear-gradient(to bottom, #FFEEEE 0px, #F7D3D3 100%);
+}
+
+.warning-2 {
+	background-image: linear-gradient(to bottom, #FAFAF3 0px, #FAFAD0 100%);
+}
+
+.aspinfo {
+	background-image: linear-gradient(to bottom, #F9FAFF 0px, #D9E0F0 100%);
+}
+
+.aspinfo-2 {
+	background-image: linear-gradient(to bottom, #FFFFFF 0px, #E9EEFF 100%);
+}
