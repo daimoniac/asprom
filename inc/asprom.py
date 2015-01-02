@@ -674,7 +674,7 @@ class Service(object):
         cur.execute(q)
         try:
             rv = cur.fetchone()[0]
-        except TypeError:
+        except (TypeError, KeyError):
             rv = False
         # if it is negative, insert a positive log entry
         if not rv:
@@ -697,7 +697,7 @@ class Service(object):
         cur.execute(q)
         try:
             rv = cur.fetchone()[0]
-        except TypeError:
+        except (TypeError, KeyError):
             rv = False
         # if it is positve, insert a negative log entry
         if rv:
@@ -832,7 +832,7 @@ class Machine(object):
         cur.execute(q)
         try:
             rv = cur.fetchone()[0]
-        except TypeError:
+        except (TypeError, KeyError):
             rv = False
         # if it is negative, insert a positive log entry
         if not rv:
@@ -880,7 +880,7 @@ class Machine(object):
         cur.execute(q)
         try:
             rv = cur.fetchone()[0]
-        except TypeError:
+        except (TypeError, KeyError):
             rv = False
         # if it is positive, insert a negative log entry
         if not rv:
