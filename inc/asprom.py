@@ -672,7 +672,10 @@ class Service(object):
         ## check if last log entry is negative
         q="""select openp from servicelog where serviceid=%d order by id desc limit 1""" % mid
         cur.execute(q)
-        rv = cur.fetchone()[0]
+        try:
+            rv = cur.fetchone()[0]
+        except TypeError:
+            rv = False
         # if it is negative, insert a positive log entry
         if not rv:
             q="""INSERT INTO servicelog (serviceId, openp, date) values (%d, %d, NOW()) """ % (mid, 1) 
@@ -692,7 +695,10 @@ class Service(object):
         ## check if last log entry is positive
         q="""SELECT openp FROM servicelog WHERE serviceid=%d order by id desc limit 1""" % self.id
         cur.execute(q)
-        rv = cur.fetchone()[0]
+        try:
+            rv = cur.fetchone()[0]
+        except TypeError:
+            rv = False
         # if it is positve, insert a negative log entry
         if rv:
             q="""INSERT INTO servicelog (serviceId, openp, date) values (%d, %d, NOW())""" % (self.id, 0)
@@ -816,12 +822,24 @@ class Machine(object):
 
         print q
         cur.execute(q)
-        
+
+
         mid=cur.lastrowid
         print "Machine ID inserted: %s" % mid
-        
-        q="""INSERT INTO machinelog (machineId, exposed, date) values (%d, %d, NOW()) """ % (mid, 1) 
+
+        ## check if last log entry is negative
+        q="""select exposed from machinelog where machineId=%d order by id desc limit 1""" % mid
         cur.execute(q)
+        try:
+            rv = cur.fetchone()[0]
+        except TypeError:
+            rv = False
+        # if it is negative, insert a positive log entry
+        if not rv:
+            q="""INSERT INTO machinelog (machineId, exposed, date) values (%d, %d, NOW()) """ % (mid, 1) 
+            cur.execute(q)
+
+        
         
         db.commit()
         return Machine(mid)
@@ -856,9 +874,19 @@ class Machine(object):
         delete self.
         '''
         print "deleting machine %s" % self.id
-
         cur = db.cursor()
-        q="""INSERT INTO machinelog (machineId, exposed, date) values (%d, %d, NOW())""" % (self.id, 0)
+        ## check if last log entry is positive
+        q="""select exposed from machinelog where machineId=%d order by id desc limit 1""" % self.id
+        cur.execute(q)
+        try:
+            rv = cur.fetchone()[0]
+        except TypeError:
+            rv = False
+        # if it is positive, insert a negative log entry
+        if not rv:
+            q="""INSERT INTO machinelog (machineId, exposed, date) values (%d, %d, NOW())""" % (self.id, 0)
+            cur.execute(q)
+
         cur.execute(q)
         db.commit()
 
