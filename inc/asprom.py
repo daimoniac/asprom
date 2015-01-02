@@ -113,7 +113,8 @@ class AspromModel(object):
             from services s
             inner join neatline n on s.id = n.serviceId
             inner join machines m on s.machineId = m.id
-            where n.neat=1"""
+            where n.neat=1
+            """
         cur.execute(q)
 
         rows = cur.fetchall()
