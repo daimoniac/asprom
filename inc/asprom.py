@@ -1,18 +1,17 @@
 '''
 Created on Oct 22, 2014
 
-@author: daimon
-\namespace asprom.inc.asprom
+@author stefankn
+@namespace asprom.inc.asprom
 '''
 
-import MySQLdb as mdb
+import re, socket, traceback, copy, MySQLdb as mdb
 from datetime import datetime
 from inc.config import Config
 from os import path
 from bottle import response, request
 from json import dumps
-from crontab import CronTab
-import re, socket, traceback, copy
+from inc.crontab import CronTab
 from netaddr import IPAddress, IPNetwork, AddrFormatError
 from nmap import nmap
 
@@ -56,17 +55,11 @@ class AspromModel(object):
         '''
         super(AspromModel, self).__init__(*args, **kwargs)
         
-    def getProfilingURL(self):
-        '''
-        @return: the URL for the GUI.
-        '''
-        return request.cfg.misc['url']
-
         
     def getAlertsExposed(self):
         '''
         returns row data for the alerts-exposed view.
-        @return: returns row data for the alerts-exposed view.
+        @return row data for the alerts-exposed view.
         '''
         #db connection
         cur = request.db.cursor(mdb.cursors.DictCursor)
@@ -89,7 +82,7 @@ class AspromModel(object):
     def getAlertsClosed(self):
         '''
         returns row data for the alerts-closed view.
-        @return: returns row data for the alerts-closed view. 
+        @return returns row data for the alerts-closed view. 
         '''
         #db connection
         cur = request.db.cursor(mdb.cursors.DictCursor)
@@ -112,7 +105,7 @@ class AspromModel(object):
     def getNeatline(self):
         '''
         returns row data for the neatline view.
-        @return: returns row data for the neatline view.
+        @return returns row data for the neatline view.
         '''
         cur = request.db.cursor(mdb.cursors.DictCursor)
         q= """select m.ip, m.hostname, s.id, s.port, s.machineId, 
@@ -137,7 +130,7 @@ class AspromModel(object):
     def getForensic(self):
         '''
         returns row data for the forensic view.
-        @return: returns row data for the forensic view.
+        @return returns row data for the forensic view.
         '''
         cur = request.db.cursor(mdb.cursors.DictCursor)
         q= """select m.ip, m.hostname, s.id, s.port, s.machineId,
@@ -164,7 +157,7 @@ class AspromModel(object):
         returns <count> last log entries from the changelog in html format.
         
         @param count: number of lines to return.
-        @return: <count> last log entries from the changelog in html format.
+        @return <count> last log entries from the changelog in html format.
         '''
         cur = request.db.cursor(mdb.cursors.DictCursor)
         q= """select c.date, c.neat, s.port, s.product, m.ip, m.hostname, c.justification from changelog c 
@@ -197,7 +190,7 @@ class AspromModel(object):
         converts row data to json format.
         
         @param someDict: row data in dictionary format.
-        @return: JSON String.
+        @return JSON String.
         '''
         response.content_type = 'application/json'
         return dumps(someDict)
@@ -209,7 +202,7 @@ class AspromScheduleModel(CronTab):
     This model abstracts access to the schedule, which consists of the users crontab and log data in the mysql DB.
     Both components are joined together using an UUID, the jobID.
     
-    @requires: CronTab.py, as this class inherits from that.
+    requires CronTab.py, as this class inherits from that.
     '''
     
     ## schedule log from database
@@ -249,7 +242,7 @@ class AspromScheduleModel(CronTab):
         @param dic        a list of lists or a list of dictionaries, e.g. a database result set.
         @param valueKey   position or name of the value to be promoted to an index
         
-        @return: promoted dictionary.
+        @return promoted dictionary.
         
 >       example:
 
@@ -270,7 +263,7 @@ class AspromScheduleModel(CronTab):
         '''
         returns last log entry of past runs for every defined job from the database.
         
-        @return: dictionary of jobs with log information.
+        @return dictionary of jobs with log information.
         '''
         dbc = request.db.cursor(mdb.cursors.DictCursor)
         
@@ -293,7 +286,7 @@ class AspromScheduleModel(CronTab):
         returns the job with id <jobid>.
         
         @param jobid: the job's id.
-        @return: a job object.
+        @return a job object.
         '''
         return self.jobsByID[jobid]
     
@@ -376,7 +369,7 @@ class AspromScheduleModel(CronTab):
         returns the job specifics for the job with id <jobid>.
         
         @param jobid: the job's id.
-        @return: a dictionary with job parameters.
+        @return a dictionary with job parameters.
         '''
         
         return self.__getScheduleI()[jobid]
@@ -387,7 +380,7 @@ class AspromScheduleModel(CronTab):
         fetches the job specifics from crontab and database.
         
         @param job: the job to be parsed.
-        @return: a dictionary with the following fields: id,when,iprange,sensor,lastrun,nextrun,laststate,params,ports.
+        @return a dictionary with the following fields: id,when,iprange,sensor,lastrun,nextrun,laststate,params,ports.
         @raise NoJobIDException: will be raised if a job is encountered which has no job id, e.g. a non-asprom crontab entry.
         '''
         # get id
@@ -619,9 +612,9 @@ class Service(object):
     This class represents a single Service, that is a port on a machine.
     '''
     
-    ##attributes
+    #attributes
     
-    ## service id
+    ## services database id
     id = None
     
     ## machine object to which this service is associated
@@ -692,7 +685,7 @@ class Service(object):
         @param product: additional product information gleaned by nmap. if not defined, get generic information about port from /etc/services.
         @param version: additional version information gleaned by nmap
         @param extrainfo: additional extra information gleaned by nmap
-        @return: self
+        @return self
         '''
 
         cur = request.db.cursor()
@@ -754,7 +747,7 @@ class Service(object):
         '''
         returns the machine object associated with this service.
         
-        @return: a machine object.
+        @return a machine object.
         '''
         return self.machine
 
@@ -764,7 +757,7 @@ class Service(object):
         tells if a service is in a specific port range.
         
         @param r: single port number or range, e.g. "1024-65535"
-        @return: boolean.
+        @return boolean.
         '''
         #single port?
         if (isinstance(r, int) or r.isdigit()):
@@ -835,16 +828,16 @@ class Machine(object):
     ## machines database id.
     id = None
     
-    # hostname, if known.
+    ## hostname, if known.
     hostname = None
     
-    # ip address of the machine.
+    ## ip address of the machine.
     ip = None
     
-    # date when the machine was last seen by port scanner.
+    ## date when the machine was last seen by port scanner.
     lsdate = None
     
-    # date when the machine was first found by the port scanner.
+    ## date when the machine was first found by the port scanner.
     ffdate = None
 
 
@@ -873,7 +866,7 @@ class Machine(object):
         
         @param name: hostname
         @param ip: ip address
-        @return: self
+        @return self
         '''
         cur = request.db.cursor(mdb.cursors.DictCursor)
         q="""INSERT INTO machines (hostname, ip, rangeId, lsdate, ffdate) 
@@ -909,7 +902,7 @@ class Machine(object):
         return list of services associated with this machine.
         
         @param exposedOnly: if true, only return currently exposed services.
-        @return: list of services.
+        @return list of services.
         '''
         cur = request.db.cursor()
         q="""select id from services s inner join servicelogCur l on s.id=l.serviceId where machineId = %d %s""" % ( 
@@ -955,7 +948,7 @@ class Machine(object):
         
         @param r: range
         @param ip: ip address
-        @return: true if ip is in range r, false otherwise.
+        @return true if ip is in range r, false otherwise.
         '''
         #single ip?
         m = re.search(r'^[\d]{1-3}\.[\d]{1-3}\.[\d]{1-3}\.[\d]{1-3}$', r)
@@ -984,7 +977,7 @@ class Machine(object):
         return a dictionary of IPs to IDs for all known hosts in the defined range.
         
         @param r: ip range
-        @return: dictionary IPs/Machine IDs in that range
+        @return dictionary IPs/Machine IDs in that range
         '''
         
         cur = request.db.cursor()

@@ -1,8 +1,8 @@
 '''
 Created on Oct 23, 2014
 
-@author: stefankn
-\namespace asprom.aspromScan
+@author stefankn
+@namespace asprom.aspromScan
 this file is invoked on the CLI as a wrapper script to nmap.
 when invoked from the command line, the scan() method is called.
 '''
@@ -64,6 +64,9 @@ def main(argv):
 def __targetFormat(v):
     '''
     internal method used by argparse to check if the target argument is in fact an IP, Hostname or CIDR Range.
+    
+    @param v: the string to check
+    @return boolean.
     '''
     try:
         #cidr range

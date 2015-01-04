@@ -2,7 +2,7 @@
 Created on Oct 19, 2014
 
 @author stefankn
-\namespace asprom.aspromGUI
+@namespace asprom.aspromGUI
 Main Script for the asprom GUI. This script presents a webserver socket to which client browsers can connect to.
 Also, it orchestrates URL calls between the model, view and controller classes.
 '''
