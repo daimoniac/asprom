@@ -27,8 +27,11 @@
     			<hr>
     			<div class="jumbotron">
 				   <h2>About this view</h2>
-					  <p>In the schedule, you define which network ranges should be checked, when they should be checked and by which sensor.</p>
-					  <p><a class="btn btn-primary btn-lg" role="button">Learn more</a></p>
+					  <p>In the schedule, you define which network ranges should be checked, and when they should be checked.</p>
+					  <p class="moretolearn">You can change the settings of each job by clicking the edit button <i class="glyphicon glyphicon-edit"></i>.
+						You can also run each scan right now by clicking the magnifying glass <i class="glyphicon glyphicon-search"></i>.
+						When you delete <i class="glyphicon glyphicon-remove"></i> a job in this interface, asprom will comment it out in the users' crontab.</p>
+					  <p><a class="btn btn-primary btn-lg" role="button" id="learnmore">Learn more</a></p>
 				</div>
 			<script>
 			// Button Events

@@ -23,6 +23,7 @@
     			<div class="jumbotron">
 				   <h2>About this view</h2>
 					  <p>The forensic profile is the actual profile of your networks found by forensic means.</p>
-					  <p><a class="btn btn-primary btn-lg" role="button">Learn more</a></p>
+					  <p class="moretolearn">You may rescan single ports by clicking the "rescan" button <i class="glyphicon glyphicon-search"></i>.</p>
+					  <p><a class="btn btn-primary btn-lg" role="button" id="learnmore">Learn more</a></p>
 				</div>
 				

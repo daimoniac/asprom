@@ -33,7 +33,7 @@ $(document).ready(function() {
 			type: "POST",
 			data: dataVal,
 			success: function( json ) {
-				addAlert("Applied changes to Job ID {{jobid}}", 'success');
+				addAlert("Applied changes to Job ID {{jobid}}", 'success', true);
 				$('#datatable').bootstrapTable('refresh');
 				BootstrapDialog.closeAll();
 			},

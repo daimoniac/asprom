@@ -6,10 +6,12 @@ Created on Oct 19, 2014
 Main Script for the asprom GUI. This script presents a webserver socket to which client browsers can connect to.
 Also, it orchestrates URL calls between the model, view and controller classes.
 '''
-from bottle import route, run, static_file, abort, redirect, template, post, request, hook
-from inc.asprom import AspromModel, AspromScheduleModel, Controller, initDB, closeDB
+from inc.bottle import route, run, static_file, abort, redirect, template, post, request, hook
+from inc.asprom import AspromModel, AspromScheduleModel, Controller, closeDB, Cfg
+import MySQLdb as mdb
 
 #Variable definitions
+
 ## relative path to static files
 sr='static/'
 
@@ -19,31 +21,27 @@ M = None
 ## schedule model
 SM = None
 
+localconf = Cfg()
+
 #
 # hooks
 #
 @hook('before_request')
 def before_request():
+    '''
+    before each dynamic request, create DB connection and Model instances.
+    '''
     p = request.path
     if p.startswith('/' + sr):
         return
     global M, SM
     try:
-        initDB()
+        request.cfg = localconf
+        request.db = mdb.connect(**request.cfg.db)
         M = AspromModel()
         SM = AspromScheduleModel(user=True)
     except:
         raise
-
-#@hook('after_request')
-#def after_request():
-#    if request.path.startswith('/' + sr):
-#        return
-#    try:
-#        closeDB()
-#    except:
-#        raise
-
 
 #
 # routes
@@ -86,6 +84,14 @@ def serve_schedule():
     Presents view: http:///schedule.
     '''
     return template('views/schedule')
+
+@route('/log')
+def serve_log():
+    '''
+    Presents view: http:///log.
+    '''
+    return M.getLastLog(10)
+
 
 # dialog views
 @route('/dia/editjob/<jobid:re:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>')
@@ -309,6 +315,4 @@ def static(filename):
     
     
 # run the service!
-#srv = SSLWSGIRefServer(host="0.0.0.0", port=8080)
-#run(host='0.0.0.0', port=8080, debug=True, server='mysslcherrypy')
 run(host='0.0.0.0', port=8080, debug=True, server='paste')

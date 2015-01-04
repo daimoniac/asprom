@@ -9,17 +9,13 @@ import MySQLdb as mdb
 from datetime import datetime
 from inc.config import Config
 from os import path
-from bottle import response
+from bottle import response, request
 from json import dumps
 from crontab import CronTab
 import re, socket, traceback, copy
 from netaddr import IPAddress, IPNetwork, AddrFormatError
-from pprint import pprint
 from nmap import nmap
 
-
-global cfg 
-global db
 
 
 class NoJoibIDException(Exception):
@@ -64,14 +60,16 @@ class AspromModel(object):
         '''
         @return: the URL for the GUI.
         '''
-        return cfg.misc['url']
+        return request.cfg.misc['url']
+
         
     def getAlertsExposed(self):
         '''
         returns row data for the alerts-exposed view.
+        @return: returns row data for the alerts-exposed view.
         '''
         #db connection
-        cur = db.cursor(mdb.cursors.DictCursor)
+        cur = request.db.cursor(mdb.cursors.DictCursor)
         q= """SELECT id, hostname, ip, port, product service, version,
             extrainfo, ffdate date, crit
             FROM exposed"""
@@ -91,9 +89,10 @@ class AspromModel(object):
     def getAlertsClosed(self):
         '''
         returns row data for the alerts-closed view.
+        @return: returns row data for the alerts-closed view. 
         '''
         #db connection
-        cur = db.cursor(mdb.cursors.DictCursor)
+        cur = request.db.cursor(mdb.cursors.DictCursor)
         q= """SELECT id, hostname, ip, port, product service, version,
             extrainfo, approvaldate date, justification, crit
             FROM closed"""
@@ -113,8 +112,9 @@ class AspromModel(object):
     def getNeatline(self):
         '''
         returns row data for the neatline view.
+        @return: returns row data for the neatline view.
         '''
-        cur = db.cursor(mdb.cursors.DictCursor)
+        cur = request.db.cursor(mdb.cursors.DictCursor)
         q= """select m.ip, m.hostname, s.id, s.port, s.machineId, 
             s.product service, s.version, s.extrainfo, n.justification, n.date
             from services s
@@ -137,8 +137,9 @@ class AspromModel(object):
     def getForensic(self):
         '''
         returns row data for the forensic view.
+        @return: returns row data for the forensic view.
         '''
-        cur = db.cursor(mdb.cursors.DictCursor)
+        cur = request.db.cursor(mdb.cursors.DictCursor)
         q= """select m.ip, m.hostname, s.id, s.port, s.machineId,
             s.product service, s.version, s.extrainfo, s.ffdate date
             from services s
@@ -157,11 +158,46 @@ class AspromModel(object):
                 row['service'] = "%s (%s)" % (row['service'], row['version'])
 
         return rows
+
+    def getLastLog(self, count):
+        '''
+        returns <count> last log entries from the changelog in html format.
+        
+        @param count: number of lines to return.
+        @return: <count> last log entries from the changelog in html format.
+        '''
+        cur = request.db.cursor(mdb.cursors.DictCursor)
+        q= """select c.date, c.neat, s.port, s.product, m.ip, m.hostname, c.justification from changelog c 
+        inner join services s on c.serviceId = s.id inner join machines m on s.machineId = m.id order by c.id desc
+        limit %d
+            """ % count
+        cur.execute(q)
+
+        rows = cur.fetchall()
+        html = ""
+        
+        for row in rows:
+            date = datetime.strftime(row['date'],"%Y-%m-%d %H:%M")
+            port = "<strong>%s</strong>" % row['port']
+            ip = "<strong>%s</strong>" % row['ip']
+            just = "<strong>%s</strong>" % row['justification']
+            
+            
+            html += (date +  ": " + ("added" if row['neat'] else "removed")) \
+            + ((" service %s[%s]" % (row['product'], port)) if row["product"] else (" port %s" % port)) \
+            + " on host " + ("%s[%s]" % (row['hostname'], ip) if row["hostname"] else ip) \
+            + ' with justification "%s".<br/>' % just
+
+        return html
+
     
     @staticmethod
     def tojson(someDict):
         '''
         converts row data to json format.
+        
+        @param someDict: row data in dictionary format.
+        @return: JSON String.
         '''
         response.content_type = 'application/json'
         return dumps(someDict)
@@ -172,6 +208,8 @@ class AspromScheduleModel(CronTab):
     '''
     This model abstracts access to the schedule, which consists of the users crontab and log data in the mysql DB.
     Both components are joined together using an UUID, the jobID.
+    
+    @requires: CronTab.py, as this class inherits from that.
     '''
     
     ## schedule log from database
@@ -193,9 +231,13 @@ class AspromScheduleModel(CronTab):
 
 
     def read(self, filename=None):
+        '''
+        override read method in CronTab.py.
+        Additionally fetches log information from the database and fills the properties schedule and scheduleLog. 
+        '''
         super(AspromScheduleModel, self).read(filename=filename)
-        self.scheduleLog = self.fetchScheduleLog()
-        self.schedule = self.fetchSchedule()
+        self.scheduleLog = self.__fetchScheduleLog()
+        self.schedule = self.__fetchSchedule()
 
 
     @staticmethod
@@ -206,6 +248,8 @@ class AspromScheduleModel(CronTab):
 
         @param dic        a list of lists or a list of dictionaries, e.g. a database result set.
         @param valueKey   position or name of the value to be promoted to an index
+        
+        @return: promoted dictionary.
         
 >       example:
 
@@ -222,11 +266,13 @@ class AspromScheduleModel(CronTab):
         return rv
  
 
-    def fetchScheduleLog(self):
+    def __fetchScheduleLog(self):
         '''
         returns last log entry of past runs for every defined job from the database.
+        
+        @return: dictionary of jobs with log information.
         '''
-        dbc = db.cursor(mdb.cursors.DictCursor)
+        dbc = request.db.cursor(mdb.cursors.DictCursor)
         
         # get last log entry for each job
         q = '''select s.jobid, state, startdate, enddate, output from scanlog s
@@ -249,9 +295,6 @@ class AspromScheduleModel(CronTab):
         @param jobid: the job's id.
         @return: a job object.
         '''
-        
-        #todo
-        #return self.getScheduleI()[jobid]
         return self.jobsByID[jobid]
     
 
@@ -285,7 +328,7 @@ class AspromScheduleModel(CronTab):
         
         job.setall(cronval)
         job.set_command('python %s/aspromScan.py -j %s %s%s%s' % 
-                        (cfg.maindir, jobid, 
+                        (request.cfg.maindir, jobid, 
                          '-o="%s" ' % extraparams if extraparams else "",
                          "-p %s " % portrange if portrange else "",
                          iprange))
@@ -307,13 +350,6 @@ class AspromScheduleModel(CronTab):
         @param    extraparams:  extra command line parameters for nmap.
         '''
         
-        print "Controller.addJob Input: "
-        print "jobid: " + jobid
-        print "cronval: " + cronval
-        print "iprange: " + iprange
-        print "portrange: " + portrange
-        print "extraparams: " + extraparams
-
         job=self.new("/bin/true")
         try:
             self.changeJob(jobid, cronval, iprange, portrange, extraparams, job)
@@ -343,7 +379,7 @@ class AspromScheduleModel(CronTab):
         @return: a dictionary with job parameters.
         '''
         
-        return self.getScheduleI()[jobid]
+        return self.__getScheduleI()[jobid]
 
  
     def __fetchJob(self, job):
@@ -431,14 +467,14 @@ class AspromScheduleModel(CronTab):
         return self.schedule
  
  
-    def getScheduleI(self):
+    def __getScheduleI(self):
         '''
         returns the schedule (crontab) indexed by jobid.
         '''
         return self.promoteToIndex(self.schedule, 'id')
 
         
-    def fetchSchedule(self):
+    def __fetchSchedule(self):
         '''
         returns row data for the schedule view.
         '''
@@ -452,7 +488,6 @@ class AspromScheduleModel(CronTab):
             try:
                 #get the job specifics
                 jobSpec = self.__fetchJob(job)
-                pprint(jobSpec)
                 rv.append(jobSpec)
                 
                 # also fill up the jobsByID attribute
@@ -482,7 +517,7 @@ class Controller(object):
         
         if jobs[jobid]:
             j = jobs[jobid]
-            print j
+            print "rescanning job: " + str(j)
             ps = scan(j['iprange'], j['ports'], j['params'], jobid)
             
         return ps
@@ -624,7 +659,7 @@ class Service(object):
         
         @param serviceid: Database id of the service.
         '''
-        cur = db.cursor(mdb.cursors.DictCursor)
+        cur = request.db.cursor(mdb.cursors.DictCursor)
         q="""SELECT s.id id, m.id mid, port, s.ffdate, s.lsdate, s.product, s.version, s.extrainfo,
             c.flipExposed, c.flipClosed
             from machines m inner join services s
@@ -660,7 +695,7 @@ class Service(object):
         @return: self
         '''
 
-        cur = db.cursor()
+        cur = request.db.cursor()
         
         # if product not defined, get generic information about port from /etc/services.
         if not product:
@@ -669,7 +704,6 @@ class Service(object):
             except:
                 pass
 
-        pprint("creating service: %s:%s:%s:%s:%s" % (mach, portno, product, version, extrainfo))
         q="""INSERT INTO services (port, protocolId, machineId, product, extrainfo, version, lsdate, ffdate) 
             VALUES (%d, %d, %d, "%s", "%s", "%s", NOW(), NOW())
             ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id), lsdate=NOW(); """ % (portno, 1, mach.id, product, extrainfo, version) 
@@ -691,7 +725,7 @@ class Service(object):
             q="""INSERT INTO servicelog (serviceId, openp, date) values (%d, %d, NOW()) """ % (mid, 1) 
             cur.execute(q)
 
-        db.commit()
+        request.db.commit()
         return Service(mid)
 
     
@@ -699,7 +733,7 @@ class Service(object):
         '''
         deletes this service.
         '''
-        cur = db.cursor()
+        cur = request.db.cursor()
         q="""DELETE FROM criticality WHERE serviceId = %d""" % (self.id)
         cur.execute(q)
         ## check if last log entry is positive
@@ -713,12 +747,14 @@ class Service(object):
         if rv:
             q="""INSERT INTO servicelog (serviceId, openp, date) values (%d, %d, NOW())""" % (self.id, 0)
             cur.execute(q)
-        db.commit()
+        request.db.commit()
         
 
     def getMachine(self):
         '''
         returns the machine object associated with this service.
+        
+        @return: a machine object.
         '''
         return self.machine
 
@@ -728,6 +764,7 @@ class Service(object):
         tells if a service is in a specific port range.
         
         @param r: single port number or range, e.g. "1024-65535"
+        @return: boolean.
         '''
         #single port?
         if (isinstance(r, int) or r.isdigit()):
@@ -745,6 +782,8 @@ class Service(object):
     def flipCrit(self, exposed=True):
         '''
         Flip criticality of "exposed" view if exposed = true, else of the "closed" view
+        
+        @param exposed: a boolean.
         '''
         if exposed:
             col = 'flipExposed'
@@ -755,13 +794,13 @@ class Service(object):
             self.critClosed = not self.critClosed
             val=self.critClosed
 
-        cur = db.cursor()
+        cur = request.db.cursor()
         q="""INSERT INTO criticality (serviceId, %s)
             VALUES (%d, %d)
             ON DUPLICATE KEY UPDATE %s=%d""" % (col, self.id, val, col, val)
         print q
         cur.execute(q)
-        db.commit()
+        request.db.commit()
     
     def approve(self, justification, neat=True):
         '''
@@ -771,13 +810,13 @@ class Service(object):
         @param neat: true for approval. if false, remove from neat line. this is used by the method remove().
         '''
             
-        cur = db.cursor()
+        cur = request.db.cursor()
         q="""INSERT INTO changelog (serviceId, neat, justification, date)
             VALUES (%d, %d, "%s", NOW())""" % (self.id, 1 if neat else 0, justification)
         cur.execute(q)
         q="UPDATE criticality SET flipExposed=0, flipClosed=0 WHERE serviceId = %d" % self.id
         cur.execute(q)
-        db.commit()
+        request.db.commit()
         
     def remove(self, justification):
         '''
@@ -792,11 +831,22 @@ class Machine(object):
     '''
     represents a machine, that is a singular IP adress.
     '''
+    
+    ## machines database id.
     id = None
+    
+    # hostname, if known.
     hostname = None
+    
+    # ip address of the machine.
     ip = None
+    
+    # date when the machine was last seen by port scanner.
     lsdate = None
+    
+    # date when the machine was first found by the port scanner.
     ffdate = None
+
 
     def __init__(self, machineid):
         '''
@@ -805,7 +855,7 @@ class Machine(object):
            
         @param machineid: Database id of the machine.
         '''
-        cur = db.cursor(mdb.cursors.DictCursor)
+        cur = request.db.cursor(mdb.cursors.DictCursor)
         q="SELECT id, ip, hostname, lsdate, ffdate FROM machines WHERE id='%d'" % machineid
         cur.execute(q)
         row=cur.fetchone()
@@ -825,7 +875,7 @@ class Machine(object):
         @param ip: ip address
         @return: self
         '''
-        cur = db.cursor(mdb.cursors.DictCursor)
+        cur = request.db.cursor(mdb.cursors.DictCursor)
         q="""INSERT INTO machines (hostname, ip, rangeId, lsdate, ffdate) 
             VALUES ("%s", "%s", %d, NOW(), NOW())
             ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id), hostname="%s", lsdate=NOW(); """ % (name, ip, 1, name) 
@@ -851,7 +901,7 @@ class Machine(object):
 
         
         
-        db.commit()
+        request.db.commit()
         return Machine(mid)
 
     def getServices(self, exposedOnly=False):
@@ -859,17 +909,15 @@ class Machine(object):
         return list of services associated with this machine.
         
         @param exposedOnly: if true, only return currently exposed services.
+        @return: list of services.
         '''
-        cur = db.cursor()
+        cur = request.db.cursor()
         q="""select id from services s inner join servicelogCur l on s.id=l.serviceId where machineId = %d %s""" % ( 
             self.id, "AND openp=1" if exposedOnly else "")
         
         cur.execute(q)
         rows = cur.fetchall()
         services=[]
-
-        print 'ho:'
-        print rows
 
         for row in rows:
             s=Service(int(row[0]))
@@ -883,7 +931,7 @@ class Machine(object):
         delete self.
         '''
         print "deleting machine %s" % self.id
-        cur = db.cursor()
+        cur = request.db.cursor()
         ## check if last log entry is positive
         q="""select exposed from machinelog where machineId=%d order by id desc limit 1""" % self.id
         cur.execute(q)
@@ -897,7 +945,7 @@ class Machine(object):
             cur.execute(q)
 
         cur.execute(q)
-        db.commit()
+        request.db.commit()
 
 
     @staticmethod
@@ -939,7 +987,7 @@ class Machine(object):
         @return: dictionary IPs/Machine IDs in that range
         '''
         
-        cur = db.cursor()
+        cur = request.db.cursor()
         q="""select id, ip from machines"""
         
         cur.execute(q)
@@ -968,7 +1016,7 @@ def scan(target, port_range, extra_options, job_id, sensor='localhost'):
     @param    sensor           In future versions, you may specify a sensor to be used for scanning (not implemented yet).
     '''
     #get db
-    cur = db.cursor()
+    cur = request.db.cursor()
 
     #set all IN PROGRESS log entries older than one day to TIMEOUT
     q="update scanlog set state='TIMEOUT' where state='IN PROGRESS' and datediff(now(), startdate) > 1"
@@ -984,7 +1032,7 @@ def scan(target, port_range, extra_options, job_id, sensor='localhost'):
     
     cur.execute(q)
     logid=cur.lastrowid
-    db.commit()
+    request.db.commit()
     cur.close()
             
     try:
@@ -994,7 +1042,7 @@ def scan(target, port_range, extra_options, job_id, sensor='localhost'):
         #recode to ascii - utf not allowed
         ps.scan(target.encode('ascii'), port_range.encode('ascii') if port_range else None, extra_options.encode('ascii'))
 
-        cur = db.cursor()
+        cur = request.db.cursor()
     
         #machines
         #remove old machines
@@ -1002,7 +1050,6 @@ def scan(target, port_range, extra_options, job_id, sensor='localhost'):
         print "known machines in range %s: %s" % (target, oldmachs)
         print "machines found by scan: %s" % ps.all_hosts()
         for hostip in filter(lambda x:False if x in ps.all_hosts() else True, oldmachs.keys()):
-            #print "deleting %s" % hostip
             mach=Machine(oldmachs[hostip])
             for svc in mach.getServices(exposedOnly=True):
                 print "deleting service %s on %s" % (svc.port, hostip)
@@ -1029,7 +1076,6 @@ def scan(target, port_range, extra_options, job_id, sensor='localhost'):
                 portnumbers = filter(lambda x:True if host['tcp'][x]['state'] == 'open' else False, host['tcp'].keys())
                 #delete old services
                 for svc in mach.getServices(exposedOnly=True):
-                    print "STK: %s" % svc.port
                     # if port not detected anymore and in scanned range, delete it
                     if not svc.port in portnumbers and (svc.inRange(port_range) if port_range else True):
                         print "deleting %s" % svc.port
@@ -1053,28 +1099,23 @@ def scan(target, port_range, extra_options, job_id, sensor='localhost'):
         
     finally:
         #log
-        cur=db.cursor()
+        cur=request.db.cursor()
         q="""UPDATE scanlog SET state="%s", enddate=NOW(), output=%s 
-            WHERE ID=%d""" % ( state, "'%s'" % db.escape_string(message) if message else "NULL", logid) 
+            WHERE ID=%d""" % ( state, "'%s'" % request.db.escape_string(message) if message else "NULL", logid) 
 
         cur.execute(q)    
-        #print message
                 
-        db.commit()
+        request.db.commit()
         return state
-
-def initDB():
-    global db
-    global cfg
-    cfg = Cfg()
-    db = mdb.connect(**cfg.db)
 
 
 def closeDB():
-    global db
+    '''
+    commit all open database cursors. close the connection.
+    '''
     try:
-        db.commit()
-        db.close()
+        request.db.commit()
+        request.db.close()
     except mdb.OperationalError:
         pass
     

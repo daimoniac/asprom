@@ -23,6 +23,9 @@
     			<div class="jumbotron">
 				   <h2>About this view</h2>
 					  <p>These Ports are unintentionally open and therefore to be checked with the highest priority.</p>
-					  <p><a class="btn btn-primary btn-lg" role="button">Learn more</a></p>
+					  <p class="moretolearn">You can temporarily mark an alert as non-critical during your research by clicking the star button <i class="glyphicon glyphicon-star"></i>.
+						To get completely rid of an alert, close the port and rescan using the magnifying glass <i class="glyphicon glyphicon-search"></i> - or add it to the "neat line" by
+						clicking the green approval button <i class="glyphicon glyphicon-ok"></i> and specifying a business justification (case id, ticket number etc.).</span></p>
+					  <p><a class="btn btn-primary btn-lg" role="button" id ="learnmore">Learn more</a></p>
 				</div>
 				

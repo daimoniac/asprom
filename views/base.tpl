@@ -20,20 +20,17 @@
     <link href="static/css/bootstrap-dialog.min.css" rel="stylesheet" media="screen">
     <link href="static/css/jquery-cron.css" rel="stylesheet" media="screen">
     <link href="static/css/asprom.css" rel="stylesheet" media="screen">
-
-    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
-    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
     <!--[if lt IE 9]>
       <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
       <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
     <![endif]-->
   </head>
   <body>
-    <div class="container">
+    <div class="container-fluid">
 	    <div class="row">
-		    <section class="col col-md-12">
+		    <section class="col col-md-11">
 		    	<header class="clearfix">
-		    		<h1>asprom</h1>
+		    		<h1>asprom   <small>assault profile monitor</small></h1>
 					<ul class="nav nav-tabs nav-fixed-top" role="tablist">
 					  <li {{! 'class="active"' if title == "alerts-exposed" else "" }}><a href="alerts-exposed">alerts: exposed</a></li>
 					  <li {{! 'class="active"' if title == "alerts-closed" else "" }}><a href="alerts-closed">alerts: closed</a></li>
@@ -42,12 +39,23 @@
 					  <li {{! 'class="active"' if title == "schedule" else "" }}><a href="schedule">schedule</a></li>
 					</ul>
 		    	</header>
-		    	<div id="alerts" class="alert-block"></div>
+		    </section>
+		    <section class="col col-md-1 text-center">
+		    	<br/>
+		    	<h1><i class="glyphicon glyphicon-tower xlarge"></i></h1>
+		    </section>
+		</div>
+		<div class="row">
+		    <section class="col col-md-12">
+		    	<header class="clearfix">
+		    	<div id="notification-area" class="alert-block"></div>
 		    	{{!base}}
+		    	<div class="well well-sm"><h4>last changes</h4>
+			    	<p id="log"></p>
+			    </div>
+		    	</header>
 			</section>
 	    </div>
     </div>
-
-
   </body>
 </html>

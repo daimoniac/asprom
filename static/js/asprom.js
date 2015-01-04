@@ -119,7 +119,6 @@ window.operateEvents = {
     },
 };
 
-
 // Button events
 
 function subEditJob(argId)
@@ -149,16 +148,19 @@ url: "/controller/rescan" + type + "/" + argId,
 type: "GET",
 // the type of data we expect back
 //dataType : "json",
+beforeSend: function () {
+	addAlert("Commencing rescan of " + type + " " + argId + ".", 'info', true);
+},
 // code to run if the request succeeds;
 // the response is passed to the function
 success: function( json ) {
 	$('#datatable').bootstrapTable('refresh');
-	addAlert("Successfully rescanned " + type + " " + argId + ".", 'success');
+	addAlert("Successfully rescanned " + type + " " + argId + ".", 'success', true);
 },
 // code to run if the request fails; the raw request and
 // status codes are passed to the function
 error: function( xhr, status, errorThrown ) {
-	addAlert("Error rescannng " + type + " " + argId + ".", 'danger');
+	addAlert("Error rescanning " + type + " " + argId + ".", 'danger');
 },
 // code to run regardless of success or failure
 //always: function( xhr, status ) {
@@ -180,13 +182,26 @@ $.ajax({
 });
 
 
+function alertTimeout(wait){
+    setTimeout(function(){
+        $('#notification-area').children('.autoclose:first-child').fadeTo(500, 0).slideUp(500, function(){
+            $(this).remove(); 
+        });
+    }, wait);
+}
 
 
-function addAlert(message, clas) {
-    $('#alerts').append(
+function addAlert(message, clas, autoclose) {
+	if (autoclose == true) {
+		clas = clas + " autoclose";
+	} 
+    $('#notification-area').append(
         '<div class="alert alert-dismissable infobox fade in alert-' + clas + '" role="alert">' +
             '<button type="button" class="close" data-dismiss="alert">' +
             '&times;</button>' + message + '</div>');
+	if (autoclose == true) {
+		alertTimeout(12000);
+	} 
 }
 
 
@@ -221,6 +236,13 @@ $(document).ready(function() {
         }
     	
     });
+
+    $('#learnmore').click(function() {
+    	$('#learnmore').fadeOut('slow');
+    	$('.moretolearn').fadeIn('slow');
+		});
+    
+    $('#log').load('/log');
     
 });
 

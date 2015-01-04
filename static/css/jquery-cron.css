@@ -6,9 +6,6 @@
     background-position: center center; 
     cursor: pointer;
 }
-.cron-button-save {
-    background-image: url('img/disk.png');
-}
 .cron-changed {
     padding-top: 5px;
     padding-bottom: 5px;

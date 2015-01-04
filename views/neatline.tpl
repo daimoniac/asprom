@@ -24,6 +24,8 @@
     			<div class="jumbotron">
 				   <h2>About this view</h2>
 					  <p>The "neat line" speficies the attack profile your network presents as it should be.</p>
-					  <p><a class="btn btn-primary btn-lg" role="button">Learn more</a></p>
+					  <p class="moretolearn">It lists only the services that should be available including the reason why (business justification).<br/>
+					  You may rescan single ports by clicking "rescan" <i class="glyphicon glyphicon-search"></i> or delete them using "delete" <i class="glyphicon glyphicon-remove"></i>.</p>
+					  <p><a class="btn btn-primary btn-lg" role="button" id="learnmore">Learn more</a></p>
 				</div>
 				
