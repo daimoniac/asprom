@@ -31,7 +31,7 @@ CREATE TABLE `changelog` (
   PRIMARY KEY (`id`,`serviceId`),
   KEY `FK__servicesa` (`serviceId`),
   CONSTRAINT `FK__servicesa` FOREIGN KEY (`serviceId`) REFERENCES `services` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8 COLLATE=utf8_roman_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COLLATE=utf8_roman_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -111,7 +111,7 @@ CREATE TABLE `machinelog` (
   PRIMARY KEY (`id`,`machineId`),
   KEY `FK__machines` (`machineId`),
   CONSTRAINT `FK__machines` FOREIGN KEY (`machineId`) REFERENCES `machines` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4241 DEFAULT CHARSET=utf8 COLLATE=utf8_roman_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COLLATE=utf8_roman_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -130,7 +130,7 @@ CREATE TABLE `machines` (
   `ffdate` datetime NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `Schlüssel 2` (`ip`)
-) ENGINE=InnoDB AUTO_INCREMENT=2440 DEFAULT CHARSET=utf8 COLLATE=utf8_roman_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COLLATE=utf8_roman_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -168,7 +168,7 @@ CREATE TABLE `scanlog` (
   `portrange` varchar(20) COLLATE utf8_roman_ci DEFAULT NULL,
   `extraoptions` varchar(300) COLLATE utf8_roman_ci DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4261 DEFAULT CHARSET=utf8 COLLATE=utf8_roman_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COLLATE=utf8_roman_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -186,7 +186,7 @@ CREATE TABLE `servicelog` (
   PRIMARY KEY (`id`,`serviceId`),
   KEY `FK__services` (`serviceId`),
   CONSTRAINT `FK__services` FOREIGN KEY (`serviceId`) REFERENCES `services` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2887 DEFAULT CHARSET=utf8 COLLATE=utf8_roman_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COLLATE=utf8_roman_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -225,7 +225,7 @@ CREATE TABLE `services` (
   UNIQUE KEY `Schlüssel 2` (`port`,`machineId`),
   KEY `serviceToMachine` (`machineId`),
   CONSTRAINT `serviceToMachine` FOREIGN KEY (`machineId`) REFERENCES `machines` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2562 DEFAULT CHARSET=utf8 COLLATE=utf8_roman_ci COMMENT='port, protocolId, machineId, product, extrainfo, version, lsdate, ffdate';
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COLLATE=utf8_roman_ci COMMENT='port, protocolId, machineId, product, extrainfo, version, lsdate, ffdate';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
