@@ -1079,7 +1079,7 @@ def scan(target, port_range, extra_options, job_id, sensor='localhost'):
                     port=host['tcp'][portno]
                     if port['state'] == 'open':
                         print "creating %s" % portno
-                        Service.create(mach, portno, port['product'], port['version'], port['extrainfo'])
+                        Service.create(mach, portno, port['product'] if "product" in port else None, port['version'], port['extrainfo'])
         
         #log
         state="OK"
