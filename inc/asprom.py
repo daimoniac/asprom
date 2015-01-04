@@ -964,12 +964,9 @@ class Machine(object):
         #cidr range as string?
         try:
             rn = IPNetwork(r)
-            return ip in rn
+            return IPAddress(ip) in rn
         except:
-            pass
-        #    raise Exception('cannot determine if %s is in range %s' % (self.ip, r))
-        
-        raise Exception('cannot determine if %s is in range %s' % (ip, r))
+            raise Exception('cannot determine if %s is in range %s' % (ip, r))
     
     @staticmethod
     def getIPsInRange(r, exposedOnly=False):
@@ -1079,7 +1076,7 @@ def scan(target, port_range, extra_options, job_id, sensor='localhost'):
                     port=host['tcp'][portno]
                     if port['state'] == 'open':
                         print "creating %s" % portno
-                        Service.create(mach, portno, port['product'] if "product" in port else None, port['version'], port['extrainfo'])
+                        Service.create(mach, portno, port['product'] if "product" in port else None, port['version'] if "version" in port else None, port['extrainfo'] if "extrainfo" in port else None)
         
         #log
         state="OK"
