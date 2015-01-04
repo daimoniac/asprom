@@ -20,7 +20,7 @@ I am using asprom on debian wheezy, so this install guide references apt-get. I'
 
 install the remaining python dependencies directly from pypi.
 
-`pip install crontab netaddr python-nmap paste bottle config croniter`
+`pip install python-crontab netaddr python-nmap paste bottle config croniter`
 
 su to an unprivileged user, then clone the git repository.
 
