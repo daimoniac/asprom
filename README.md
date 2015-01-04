@@ -16,9 +16,13 @@ How to install
 
 I am using asprom on debian wheezy, so this install guide references apt-get. I'm sure you can translate that to the package manager of your choice distribution.
 
-`apt-get install cron python git mysql-server python-mysqldb python-netaddr python-nmap python-paste nmap`
+`apt-get install cron python python-pip git mysql-server nmap python-mysqldb`
 
-su to an unprivileged user, then clone the git repository:
+install the remaining python dependencies directly from pypi.
+
+`pip install crontab netaddr python-nmap paste bottle config croniter`
+
+su to an unprivileged user, then clone the git repository.
 
 ```bash
 cd ~
@@ -35,23 +39,19 @@ create an empty database and grant the user you just specified all rights to it.
 
 ```sql
 mysql -uroot -p
-> create database asprom
-> grant all privileges on asprom.* to asprom@localhost identified by '<arbitrarypassword>'
-> exit
+> create database asprom;
+> grant all privileges on asprom.* to asprom@localhost identified by '<arbitrarypassword>';
+> exit;
 ```
 
 import the ddl structure from the ddl.sql file:
 
-```bash
-mysql -uroot -p asprom < db/ddl.sql
-```
+`mysql -uroot -p asprom < db/ddl.sql`
 
 ### Running the GUI
 
 You are done! Start the GUI:
 
-```bash
-python aspromGUI.py
-```
+`python aspromGUI.py`
 
-and navigate to http://localhost:8080.
+and navigate to [http://localhost:8080](http://localhost:8080).
