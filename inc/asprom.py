@@ -1109,6 +1109,14 @@ def scan(target, port_range, extra_options, job_id, sensor='localhost'):
         return state
 
 
+def initDB(localconf):
+    '''
+    inits the database into the bottle request scope.
+    '''
+    request.cfg = localconf
+    request.db = mdb.connect(**request.cfg.db)
+
+
 def closeDB():
     '''
     commit all open database cursors. close the connection.

@@ -7,8 +7,7 @@ Main Script for the asprom GUI. This script presents a webserver socket to which
 Also, it orchestrates URL calls between the model, view and controller classes.
 '''
 from inc.bottle import route, run, static_file, abort, redirect, template, post, request, hook
-from inc.asprom import AspromModel, AspromScheduleModel, Controller, closeDB, Cfg
-import MySQLdb as mdb
+from inc.asprom import AspromModel, AspromScheduleModel, Controller, initDB, closeDB, Cfg
 
 #Variable definitions
 
@@ -36,8 +35,7 @@ def before_request():
         return
     global M, SM
     try:
-        request.cfg = localconf
-        request.db = mdb.connect(**request.cfg.db)
+        initDB(localconf)
         M = AspromModel()
         SM = AspromScheduleModel(user=True)
     except:

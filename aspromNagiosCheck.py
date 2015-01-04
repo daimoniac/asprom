@@ -11,7 +11,7 @@ this script terminates with a return value of 1.
 Else, it terminates with a value of 0 signalling everything is alright.
 '''
 #import argparse, re
-from inc.asprom import initDB, closeDB, AspromModel
+from inc.asprom import initDB, closeDB, AspromModel, Cfg
 import sys
 
 def genMessages(exp):
@@ -38,7 +38,8 @@ def main(argv):
     exitstate=0
     msg=""
     
-    initDB()
+    localconf = Cfg()
+    initDB(localconf)
     M = AspromModel()
 
     #exposed services    

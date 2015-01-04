@@ -7,7 +7,7 @@ this file is invoked on the CLI as a wrapper script to nmap.
 when invoked from the command line, the scan() method is called.
 '''
 import argparse, re
-from inc.asprom import scan, initDB, closeDB
+from inc.asprom import scan, initDB, closeDB, Cfg
 
 
 def main(argv):
@@ -55,7 +55,8 @@ def main(argv):
     
     args = parser.parse_args()
     
-    initDB()
+    localconf = Cfg()
+    initDB(localconf)
     scan(args.target, args.port_range, args.extra_options, args.job_id)
     closeDB()
 
