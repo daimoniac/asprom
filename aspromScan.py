@@ -3,12 +3,11 @@ Created on Oct 23, 2014
 
 @author: stefankn
 \namespace asprom.aspromScan
-this file fulfills two roles: it is invoked on the CLI as a wrapper script to nmap.
+this file is invoked on the CLI as a wrapper script to nmap.
 when invoked from the command line, the scan() method is called.
-You can also import this fila and call the scan method from other python scripts.
 '''
 import argparse, re
-from inc.asprom import scan
+from inc.asprom import scan, initDB, closeDB
 
 
 def main(argv):
@@ -56,8 +55,9 @@ def main(argv):
     
     args = parser.parse_args()
     
+    initDB()
     scan(args.target, args.port_range, args.extra_options, args.job_id)
-
+    closeDB()
 
 
 def __targetFormat(v):

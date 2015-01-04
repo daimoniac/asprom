@@ -18,6 +18,10 @@ from pprint import pprint
 from nmap import nmap
 
 
+global cfg 
+global db
+
+
 class NoJoibIDException(Exception):
     """
     Exception raised for crontab entries not concerning asprom.
@@ -26,10 +30,12 @@ class NoJoibIDException(Exception):
     def __init__(self, job):
         self.job = job
 
+
 class Cfg(Config):
     '''
     Configuration in dict form from the config file etc/asprom.cfg.
     '''
+    maindir=None
 
     def __init__(self):
         '''
@@ -38,12 +44,8 @@ class Cfg(Config):
         maindir = path.normpath(path.join(path.dirname(path.realpath(__file__)), path.pardir))
         # read config file
         super(Cfg, self).__init__(maindir + '/etc/asprom.cfg')
+        self.maindir = maindir
 
-
-global cfg 
-global db
-cfg = Cfg()
-db = mdb.connect(**cfg.db)
 
 
 class AspromModel(object):
@@ -58,6 +60,11 @@ class AspromModel(object):
         '''
         super(AspromModel, self).__init__(*args, **kwargs)
         
+    def getProfilingURL(self):
+        '''
+        @return: the URL for the GUI.
+        '''
+        return cfg.misc['url']
         
     def getAlertsExposed(self):
         '''
@@ -277,9 +284,9 @@ class AspromScheduleModel(CronTab):
             job = self.getJobByID(jobid)
         
         job.setall(cronval)
-        job.set_command('python ~/workspace/asprom/aspromScan.py -j %s %s%s%s' % 
-                        (jobid, 
-                         '-o="%s"' % extraparams if extraparams else "",
+        job.set_command('python %s/aspromScan.py -j %s %s%s%s' % 
+                        (cfg.maindir, jobid, 
+                         '-o="%s" ' % extraparams if extraparams else "",
                          "-p %s " % portrange if portrange else "",
                          iprange))
         job.set_comment('asprom %s' % datetime.now().strftime("%Y-%m-%d %H:%M"))
@@ -657,7 +664,10 @@ class Service(object):
         
         # if product not defined, get generic information about port from /etc/services.
         if not product:
-            product=socket.getservbyport(portno, 'tcp')
+            try:
+                product=socket.getservbyport(portno, 'tcp')
+            except:
+                pass
 
         pprint("creating service: %s:%s:%s:%s:%s" % (mach, portno, product, version, extrainfo))
         q="""INSERT INTO services (port, protocolId, machineId, product, extrainfo, version, lsdate, ffdate) 
@@ -831,8 +841,8 @@ class Machine(object):
         q="""select exposed from machinelog where machineId=%d order by id desc limit 1""" % mid
         cur.execute(q)
         try:
-            rv = cur.fetchone()[0]
-        except (TypeError, KeyError):
+            rv = cur.fetchone()['exposed']
+        except (TypeError):
             rv = False
         # if it is negative, insert a positive log entry
         if not rv:
@@ -862,7 +872,6 @@ class Machine(object):
         print rows
 
         for row in rows:
-            s=Service(2271)
             s=Service(int(row[0]))
             services.append(s)
         
@@ -929,11 +938,13 @@ class Machine(object):
         @param r: ip range
         @return: dictionary IPs/Machine IDs in that range
         '''
+        
         cur = db.cursor()
         q="""select id, ip from machines"""
         
         cur.execute(q)
         rows = cur.fetchall()
+        cur.close()
         
         inRangeIPs = {}
         
@@ -974,16 +985,16 @@ def scan(target, port_range, extra_options, job_id, sensor='localhost'):
     cur.execute(q)
     logid=cur.lastrowid
     db.commit()
+    cur.close()
             
     try:
-        
-        #recreate db cursor
-        cur = db.cursor()
 
         #start port scanner
         ps = nmap.PortScanner()
         #recode to ascii - utf not allowed
         ps.scan(target.encode('ascii'), port_range.encode('ascii') if port_range else None, extra_options.encode('ascii'))
+
+        cur = db.cursor()
     
         #machines
         #remove old machines
@@ -1019,7 +1030,8 @@ def scan(target, port_range, extra_options, job_id, sensor='localhost'):
                 #delete old services
                 for svc in mach.getServices(exposedOnly=True):
                     print "STK: %s" % svc.port
-                    if not svc.port in portnumbers and svc.inRange(port_range):
+                    # if port not detected anymore and in scanned range, delete it
+                    if not svc.port in portnumbers and (svc.inRange(port_range) if port_range else True):
                         print "deleting %s" % svc.port
                         svc.delete()
                     
@@ -1037,14 +1049,33 @@ def scan(target, port_range, extra_options, job_id, sensor='localhost'):
     except:
         state="FAILED"
         message=traceback.format_exc()
+        print message
         
     finally:
         #log
+        cur=db.cursor()
         q="""UPDATE scanlog SET state="%s", enddate=NOW(), output=%s 
             WHERE ID=%d""" % ( state, "'%s'" % db.escape_string(message) if message else "NULL", logid) 
 
         cur.execute(q)    
-        print message
+        #print message
                 
         db.commit()
         return state
+
+def initDB():
+    global db
+    global cfg
+    cfg = Cfg()
+    db = mdb.connect(**cfg.db)
+
+
+def closeDB():
+    global db
+    try:
+        db.commit()
+        db.close()
+    except mdb.OperationalError:
+        pass
+    
+    

@@ -6,18 +6,44 @@ Created on Oct 19, 2014
 Main Script for the asprom GUI. This script presents a webserver socket to which client browsers can connect to.
 Also, it orchestrates URL calls between the model, view and controller classes.
 '''
-from bottle import route, run, static_file, abort, redirect, template, post, request
-from inc.asprom import AspromModel, AspromScheduleModel, Controller
+from bottle import route, run, static_file, abort, redirect, template, post, request, hook
+from inc.asprom import AspromModel, AspromScheduleModel, Controller, initDB, closeDB
 
 #Variable definitions
 ## relative path to static files
 sr='static/'
 
 ## main model
-M = AspromModel()
+M = None
 
 ## schedule model
-SM = AspromScheduleModel(user=True)
+SM = None
+
+#
+# hooks
+#
+@hook('before_request')
+def before_request():
+    p = request.path
+    if p.startswith('/' + sr):
+        return
+    global M, SM
+    try:
+        initDB()
+        M = AspromModel()
+        SM = AspromScheduleModel(user=True)
+    except:
+        raise
+
+#@hook('after_request')
+#def after_request():
+#    if request.path.startswith('/' + sr):
+#        return
+#    try:
+#        closeDB()
+#    except:
+#        raise
+
 
 #
 # routes
@@ -108,6 +134,7 @@ def returnjson(filename):
         return M.tojson(SM.getSchedule())
     else: 
         abort(404, "undefined json")
+    closeDB()
 
 
 ## controller
@@ -121,6 +148,7 @@ def serve_rescanController(jobid):
     @param    jobid    the job ID to be scanned.
     '''
     rv = Controller.rescanJob(jobid)
+    closeDB()
     return rv
 
 @route('/controller/rescanmachine/<host:re:[0-9]+>')
@@ -136,6 +164,7 @@ def serve_rescanMachine(host, port=None):
     '''
     assert host.isdigit()
     rv = Controller.rescanMachine(int(host), int(port) if port else None)
+    closeDB()
     return rv
 
 @route('/controller/rescanservice/<serviceid:re:[0-9]+>')
@@ -148,6 +177,7 @@ def serve_rescanService(serviceid):
     '''
     assert serviceid.isdigit()
     rv = Controller.rescanService(int(serviceid))
+    closeDB()
     return rv
 
 
@@ -160,6 +190,7 @@ def serve_deleteJob(jobid):
     @param    jobid    The Job ID to be scanned.
     '''
     rv = SM.deleteJob(jobid)
+    closeDB()
     return rv
 
 
@@ -176,6 +207,7 @@ def serve_flipCrit(page, serviceid):
     '''
     exposed = True if page=="exposed" else False
     rv = Controller.flipCrit(serviceid, exposed)
+    closeDB()
     return rv
 
 # approve
@@ -192,6 +224,7 @@ def serve_approve():
     serviceid = request.forms.get('pk')
     justification = request.forms.get('value')
     rv = Controller.approve(int(serviceid), justification)
+    closeDB()
     return rv
     
 # remove
@@ -208,6 +241,7 @@ def serve_remove():
     serviceid = request.forms.get('pk')
     justification = request.forms.get('value')
     rv = Controller.remove(int(serviceid), justification)
+    closeDB()
     return rv
 
 # edit job
@@ -232,6 +266,7 @@ def serve_changejob(jobid):
                       portrange = request.forms.get('portrange'),
                       extraparams = request.forms.get('extraparams')
                       )
+    closeDB()
     return rv
 
 # edit job
@@ -257,6 +292,7 @@ def serve_addjob(jobid):
                    portrange = request.forms.get('portrange'),
                    extraparams = request.forms.get('extraparams')
                    )
+    closeDB()
     return rv
 
 
