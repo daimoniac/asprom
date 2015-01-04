@@ -27,6 +27,7 @@ CREATE TABLE `changelog` (
   `serviceId` int(10) unsigned NOT NULL,
   `neat` tinyint(1) unsigned NOT NULL,
   `justification` varchar(500) COLLATE utf8_roman_ci DEFAULT NULL,
+  `username` VARCHAR(50) NULL DEFAULT NULL COLLATE 'utf8_roman_ci',
   `date` datetime NOT NULL,
   PRIMARY KEY (`id`,`serviceId`),
   KEY `FK__servicesa` (`serviceId`),
