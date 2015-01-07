@@ -365,4 +365,5 @@ def static(filename):
 
 
 # run the service!
-run(host='0.0.0.0', port=8080, debug=True, server='paste')
+run(host=localconf['server']['listen'], port=localconf['server']['port'],
+    debug=localconf['server']['debug'], server='paste')

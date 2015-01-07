@@ -121,12 +121,12 @@ window.operateEvents = {
 
 // Button events
 
-function subEditJob(argId)
-BootstrapDialog.show({
-    message: $('<div></div>').load('/dia/editjob/' + argId)
-});
+function subEditJob(argId) {
+	BootstrapDialog.show({
+		message: $('<div></div>').load('/dia/editjob/' + argId)
+	})};
 
-function subDeleteJob(argId)
+function subDeleteJob(argId) {
 $.ajax({
 	url: "/controller/deletejob/" + argId,
 	type: "GET",
@@ -136,11 +136,11 @@ $.ajax({
 	error: function( xhr, status, errorThrown ) {
 		addAlert("Error deleting job " + argId + ".", 'danger');
 	},
-});
+})};
 
 
 // AJAX Stuff
-function subRescan(type, argId)
+function subRescan(type, argId) {
 //Using the core $.ajax() method
 $.ajax({
 // the URL for the request
@@ -166,10 +166,10 @@ error: function( xhr, status, errorThrown ) {
 //always: function( xhr, status ) {
 //alert( "The request is complete!" );
 //}
-});
+})};
 
 
-function subFlipCrit(page, argId)
+function subFlipCrit(page, argId) {
 $.ajax({
 	url: "/controller/flipcrit/" + page + "/" + argId,
 	type: "GET",
@@ -179,7 +179,7 @@ $.ajax({
 	error: function( xhr, status, errorThrown ) {
 		addAlert("Error flipping criticality of ID " + argId + ".", 'danger');
 	},
-});
+})};
 
 
 function alertTimeout(wait){
