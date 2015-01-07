@@ -130,6 +130,7 @@ function subDeleteJob(argId) {
 $.ajax({
 	url: "/controller/deletejob/" + argId,
 	type: "GET",
+	cache: false,
 	success: function( json ) {
 		$('#datatable').bootstrapTable('refresh');
 	},
@@ -146,6 +147,7 @@ $.ajax({
 // the URL for the request
 url: "/controller/rescan" + type + "/" + argId,
 type: "GET",
+cache: false,
 // the type of data we expect back
 //dataType : "json",
 beforeSend: function () {
@@ -173,6 +175,7 @@ function subFlipCrit(page, argId) {
 $.ajax({
 	url: "/controller/flipcrit/" + page + "/" + argId,
 	type: "GET",
+	cache: false,
 	success: function( json ) {
 		$('#datatable').bootstrapTable('refresh');
 	},

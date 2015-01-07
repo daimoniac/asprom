@@ -31,6 +31,7 @@ $(document).ready(function() {
 		$.ajax({
 			url: "/controller/editjob/{{jobid}}",
 			type: "POST",
+			cache: false,
 			data: dataVal,
 			success: function( json ) {
 				addAlert("Applied changes to Job ID {{jobid}}", 'success', true);
