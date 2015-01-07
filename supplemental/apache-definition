@@ -1,0 +1,42 @@
+<IfModule mod_ssl.c>
+<VirtualHost _default_:443>
+
+        Redirect / /alerts-exposed
+
+        # Proxy Config
+        ProxyPreserveHost On
+        ProxyRequests On
+        ProxyVia On
+        ProxyPassMatch /(.+) http://127.0.0.1:8080/$1
+        ProxyPassReverse / http://127.0.0.1:8080/
+
+        # SSL Config
+        SSLEngine on
+        SSLCertificateFile    /etc/ssl/certs/ssl-cert-snakeoil.pem
+        SSLCertificateKeyFile /etc/ssl/private/ssl-cert-snakeoil.key
+        <FilesMatch "\.(cgi|shtml|phtml|php)$">
+                SSLOptions +StdEnvVars
+        </FilesMatch>
+        <Directory /usr/lib/cgi-bin>
+                SSLOptions +StdEnvVars
+        </Directory>
+        BrowserMatch "MSIE [2-6]" \
+                nokeepalive ssl-unclean-shutdown \
+                downgrade-1.0 force-response-1.0
+        # MSIE 7 and newer should be able to use keepalive
+        BrowserMatch "MSIE [17-9]" ssl-unclean-shutdown
+
+        # Auth Config
+        <Proxy *>
+                AuthType Basic
+                AuthName "asprom GUI Login"
+                AuthBasicProvider file
+                AuthUserFile /home/asprom/asprom/.htpasswd
+                Require valid-user
+                #Order Deny,Allow
+                #Deny from all
+                #Allow from 192.168.0
+        </Proxy>
+
+</VirtualHost>
+</IfModule>

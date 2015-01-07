@@ -57,10 +57,14 @@ class AspromModel(object):
     format used by bootstrap-table AJAX calls.
     '''
 
-    def __init__(self, *args, **kwargs):
+    ## logged in username, e.g. by apache auth_basic
+    username = None
+
+    def __init__(self, username=None, * args, **kwargs):
         '''
         standard constructor
         '''
+        self.username = username if username else ""
         super(AspromModel, self).__init__(*args, **kwargs)
 
     def getAlertsExposed(self):
@@ -168,7 +172,7 @@ class AspromModel(object):
         '''
         cur = request.db.cursor(mdb.cursors.DictCursor)
         q = """select c.date, c.neat, s.port, s.product, m.ip, m.hostname,
-        c.justification from changelog c
+        c.justification, c.username from changelog c
         inner join services s on c.serviceId = s.id inner join machines m on
         s.machineId = m.id order by c.id desc
         limit %d
@@ -184,7 +188,8 @@ class AspromModel(object):
             ip = "<strong>%s</strong>" % row['ip']
             just = "<strong>%s</strong>" % row['justification']
 
-            html += (date + ": " + ("added" if row['neat'] else "removed")) + \
+            html += (date + ":" + (row['username'] if row['username'] else "")\
+                + " " + ("added" if row['neat'] else "removed")) + \
                 ((" service %s[%s]" % (row['product'], port)) if row["product"\
                 ] else (" port %s" % port)) + " on host " + ("%s[%s]" % (row[ \
                 'hostname'], ip) if row["hostname"] else ip) + \
@@ -598,7 +603,7 @@ class Controller(object):
         s.flipCrit(exposed)
 
     @staticmethod
-    def approve(serviceid, justification):
+    def approve(serviceid, justification, username):
         '''
         Using this method, a service can be approved to the neatline.
 
@@ -607,10 +612,10 @@ class Controller(object):
          to be approved.
         '''
         s = Service(int(serviceid))
-        s.approve(justification)
+        s.approve(justification, username)
 
     @staticmethod
-    def remove(serviceid, justification):
+    def remove(serviceid, justification, username):
         '''
         Using this method, a service can be removed from the neatline.
 
@@ -619,7 +624,7 @@ class Controller(object):
          be removed.
         '''
         s = Service(int(serviceid))
-        s.remove(justification)
+        s.remove(justification, username)
 
 
 class Service(object):
@@ -827,7 +832,7 @@ class Service(object):
         cur.execute(q)
         request.db.commit()
 
-    def approve(self, justification, neat=True):
+    def approve(self, justification, username, neat=True):
         '''
         approve this service and add it to the neat line
 
@@ -837,22 +842,22 @@ class Service(object):
         '''
 
         cur = request.db.cursor()
-        q = ("""INSERT INTO changelog (serviceId, neat, justification, date)
-            VALUES (%d, %d, "%s", NOW())"""
-            % (self.id, 1 if neat else 0, justification))
+        q = ("""INSERT INTO changelog (serviceId, neat, justification, date,
+            username) VALUES (%d, %d, "%s", NOW(), "%s")"""
+            % (self.id, 1 if neat else 0, justification, username))
         cur.execute(q)
         q = ("""UPDATE criticality SET flipExposed=0, flipClosed=0
          WHERE serviceId = %d""" % self.id)
         cur.execute(q)
         request.db.commit()
 
-    def remove(self, justification):
+    def remove(self, justification, username):
         '''
         remove this service from the neat line.
 
         @param justification: a business justification.
         '''
-        self.approve(justification, False)
+        self.approve(justification, username, False)
 
 
 class Machine(object):

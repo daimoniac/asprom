@@ -35,13 +35,19 @@ def before_request():
     '''
     before each dynamic request, create DB connection and Model instances.
     '''
+    username = None
+    try:
+        username = request.auth[0]
+    except:
+        pass
+
     p = request.path
     if p.startswith('/' + sr):
         return
     global M, SM
     try:
         initDB(localconf)
-        M = AspromModel()
+        M = AspromModel(username=username)
         SM = AspromScheduleModel(user=True)
     except:
         raise
@@ -265,7 +271,7 @@ def serve_approve():
     '''
     serviceid = request.forms.get('pk')
     justification = request.forms.get('value')
-    Controller.approve(int(serviceid), justification)
+    Controller.approve(int(serviceid), justification, M.username)
     closeDB()
 
 # remove
@@ -283,7 +289,7 @@ def serve_remove():
     '''
     serviceid = request.forms.get('pk')
     justification = request.forms.get('value')
-    Controller.remove(int(serviceid), justification)
+    Controller.remove(int(serviceid), justification, M.username)
     closeDB()
 
 # edit job
