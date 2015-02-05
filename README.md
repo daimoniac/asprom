@@ -1,6 +1,13 @@
 asprom - assault profile monitor
 ================================
 
+Homepage
+--------
+http://www.asprom.de
+
+Description
+-----------
+
 asprom is a firewall compliance scanner. You define a profile of which services your network(s) should offer to users.
 The scanner automatically and regularly portscans your networks using nmap and reports any aberrations from the defined profile.
 
