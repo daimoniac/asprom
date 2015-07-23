@@ -8,7 +8,7 @@ which client browsers can connect to.
 Also, it orchestrates URL calls between the model, view and controller classes.
 '''
 from inc.bottle import (route, run, static_file, abort, redirect, template,
-                        post, request, hook)
+                        post, request, hook, response)
 from inc.asprom import (AspromModel, AspromScheduleModel, Controller, initDB,
                         closeDB, Cfg)
 
@@ -170,6 +170,23 @@ def returnjson(filename):
         return M.tojson(SM.getSchedule())
     else:
         abort(404, "undefined json")
+    closeDB()
+
+
+# JSON Views
+@route('/plain/<filename:path>')
+def returnplain(filename):
+    '''
+    Presents all plaintext views: http:///plain/*.
+    These are used by other scripts, like markusk's openvas-config-script
+
+    @param    filename    the plaintext view to be shown.
+    '''
+    response.content_type = 'text/plain'
+    if filename == 'scanned-ranges':
+        return SM.getScannedRanges()
+    else:
+        abort(404, "undefined url")
     closeDB()
 
 

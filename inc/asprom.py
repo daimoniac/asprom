@@ -391,6 +391,17 @@ class AspromScheduleModel(CronTab):
 
         return self.__getScheduleI()[jobid]
 
+    def getScannedRanges(self):
+        '''
+        returns all scanned ranges as newline-separated plaintext.
+
+        @return a string.
+        '''
+        jobString = ""
+        for jobb in self.getSchedule():
+            jobString = "%s%s\n" % (jobString, jobb['iprange'])
+        return jobString
+
     def __fetchJob(self, job):
         '''
         fetches the job specifics from crontab and database.
