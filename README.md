@@ -1,13 +1,6 @@
 asprom - assault profile monitor
 ================================
 
-Homepage
---------
-http://www.asprom.de
-
-Description
------------
-
 asprom is a firewall compliance scanner. You define a profile of which services your network(s) should offer to users.
 The scanner automatically and regularly portscans your networks using nmap and reports any aberrations from the defined profile.
 
@@ -23,11 +16,11 @@ How to install
 
 I am using asprom on debian wheezy, so this install guide references apt-get. I'm sure you can translate that to the package manager of your choice distribution.
 
-`apt-get install cron python python-pip git mysql-server nmap python-mysqldb`
+`apt-get install cron python python-pip git mysql-server nmap python-mysqldb python-nmap`
 
 install the remaining python dependencies directly from pypi.
 
-`pip install python-crontab netaddr python-nmap paste bottle config croniter`
+`pip install python-crontab netaddr paste bottle config croniter`
 
 su to an unprivileged user, then clone the git repository.
 

@@ -391,17 +391,6 @@ class AspromScheduleModel(CronTab):
 
         return self.__getScheduleI()[jobid]
 
-    def getScannedRanges(self):
-        '''
-        returns all scanned ranges as newline-separated plaintext.
-
-        @return a string.
-        '''
-        jobString = ""
-        for jobb in self.getSchedule():
-            jobString = "%s%s\n" % (jobString, jobb['iprange'])
-        return jobString
-
     def __fetchJob(self, job):
         '''
         fetches the job specifics from crontab and database.
@@ -1112,7 +1101,7 @@ def scan(target, port_range, extra_options, job_id, sensor='localhost'):
             host = ps[hostip]
 
             #if nmap did not determine hostname, try be reverse name resolution
-            if not (host['hostname'] and len(host['hostname'])):
+            if not ('hostname' in host and host['hostname'] and len(host['hostname'])):
                 from socket import gethostbyaddr, herror
                 try:
                     host['hostname'] = gethostbyaddr(hostip)[0]
