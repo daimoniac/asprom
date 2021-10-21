@@ -1162,7 +1162,7 @@ def initDB(localconf):
     inits the database into the bottle request scope.
     '''
     request.cfg = localconf
-    request.db = mdb.connect(**request.cfg.db)
+    request.db = mdb.connect(**request.cfg.db.data)
 
 
 def closeDB():

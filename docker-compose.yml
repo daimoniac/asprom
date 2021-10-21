@@ -1,0 +1,32 @@
+version: '2.2'
+services:
+  asprom:
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - crontabs:/var/spool/cron/crontabs
+    ports:
+      - 8080:8080
+  mysql:
+    restart: always
+    image: mysql:8.0
+    cap_add:
+      - SYS_NICE  # CAP_SYS_NICE
+    environment:
+      MYSQL_USER: 'asprom'
+      MYSQL_PASSWORD: 'asprom'
+      MYSQL_DATABASE: 'asprom'
+      MYSQL_ROOT_PASSWORD: "crazytimes"
+    volumes:
+      - mysqldata:/var/lib/mysql
+      - "./db/ddl.sql:/docker-entrypoint-initdb.d/1.sql"
+    ports:
+      - 3306:3306
+
+volumes:
+  mysqldata:
+  crontabs:
+
+
