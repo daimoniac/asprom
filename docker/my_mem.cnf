@@ -1,0 +1,14 @@
+[mysqld]
+# CACHES AND LIMITS #
+max-connections                = 20
+tmp-table-size                 = 32M
+max-heap-table-size            = 32M
+thread-cache-size              = 50
+open-files-limit               = 65535
+table-definition-cache         = 1024
+table-open-cache               = 2048
+
+# INNODB #
+innodb-log-file-size           = 64M
+innodb-buffer-pool-size        = 768M
+

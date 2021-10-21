@@ -1,32 +1,52 @@
-version: '2.2'
+version: "3"
 services:
   asprom:
     restart: always
     build:
       context: .
       dockerfile: Dockerfile
+    depends_on:
+      - mysql
     volumes:
       - crontabs:/var/spool/cron/crontabs
-    ports:
-      - 8080:8080
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.asprom.rule=Host(`${SSL_HOSTNAME}`)"
+      - "traefik.http.routers.asprom.entrypoints=websecure"
+      - "traefik.http.routers.asprom.tls.certresolver=myresolver"
   mysql:
     restart: always
     image: mysql:8.0
     cap_add:
-      - SYS_NICE  # CAP_SYS_NICE
+      - SYS_NICE
     environment:
       MYSQL_USER: 'asprom'
       MYSQL_PASSWORD: 'asprom'
       MYSQL_DATABASE: 'asprom'
-      MYSQL_ROOT_PASSWORD: "crazytimes"
+      MYSQL_RANDOM_ROOT_PASSWORD: 'true'
     volumes:
-      - mysqldata:/var/lib/mysql
+      - "mysqldata:/var/lib/mysql"
       - "./db/ddl.sql:/docker-entrypoint-initdb.d/1.sql"
+      - "./docker/my_mem.cnf:/etc/mysql/conf.d/my_mem.cnf"
+  traefik:
+    restart: always
+    image: "traefik:v2.5"
+    depends_on:
+      - asprom
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
     ports:
-      - 3306:3306
+      - 443:443
+    volumes:
+      - letsencrypt:/letsencrypt
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
 
 volumes:
   mysqldata:
   crontabs:
-
-
+  letsencrypt:
