@@ -1,4 +1,4 @@
-version: "3"
+version: "3.7"
 services:
   asprom:
     restart: always
@@ -14,6 +14,7 @@ services:
       - "traefik.http.routers.asprom.rule=Host(`${SSL_HOSTNAME}`)"
       - "traefik.http.routers.asprom.entrypoints=websecure"
       - "traefik.http.routers.asprom.tls.certresolver=myresolver"
+      - "traefik.http.routers.asprom.middlewares=traefik-forward-auth"
   mysql:
     restart: always
     image: mysql:8.0
@@ -28,11 +29,28 @@ services:
       - "mysqldata:/var/lib/mysql"
       - "./db/ddl.sql:/docker-entrypoint-initdb.d/1.sql"
       - "./docker/my_mem.cnf:/etc/mysql/conf.d/my_mem.cnf"
+  traefik-forward-auth:
+    restart: always
+    image: thomseddon/traefik-forward-auth:2
+    environment:
+      - PROVIDERS_GOOGLE_CLIENT_ID
+      - PROVIDERS_GOOGLE_CLIENT_SECRET
+      - SECRET=something-random
+      - INSECURE_COOKIE=true # Example assumes no https, do not use in production
+        #      - LOG_LEVEL=debug
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.middlewares.traefik-forward-auth.forwardauth.address=http://traefik-forward-auth:4181"
+      - "traefik.http.middlewares.traefik-forward-auth.forwardauth.authResponseHeaders=X-Forwarded-User"
+      - "traefik.http.middlewares.traefik-forward-auth.headers.customrequestheaders.X-Forwarded-Proto = https"
+      - "traefik.http.services.traefik-forward-auth.loadbalancer.server.port=4181"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
   traefik:
     restart: always
-    image: "traefik:v2.5"
     depends_on:
-      - asprom
+      - traefik-forward-auth
+    image: "traefik:v2.5"
     command:
       - "--api.insecure=true"
       - "--providers.docker=true"

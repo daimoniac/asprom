@@ -11,13 +11,6 @@ Don't be afraid - it is easily installed, very user-friendly and doesn't require
 
 How to install
 --------------
-## docker
-```
-cp env.example .env
-docker-compose up -d
-```
-
-## classic
 
 ### Runtime
 
