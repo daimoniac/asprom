@@ -37,12 +37,12 @@ services:
       - PROVIDERS_GOOGLE_CLIENT_SECRET
       - SECRET=something-random
       - INSECURE_COOKIE=true # Example assumes no https, do not use in production
-        #      - LOG_LEVEL=debug
+        #- LOG_LEVEL=debug
     labels:
       - "traefik.enable=true"
       - "traefik.http.middlewares.traefik-forward-auth.forwardauth.address=http://traefik-forward-auth:4181"
       - "traefik.http.middlewares.traefik-forward-auth.forwardauth.authResponseHeaders=X-Forwarded-User"
-      - "traefik.http.middlewares.traefik-forward-auth.headers.customrequestheaders.X-Forwarded-Proto = https"
+        #- "traefik.http.middlewares.traefik-forward-auth.headers.customrequestheaders.X-Forwarded-Proto = https" leads to error, multiple middlewares
       - "traefik.http.services.traefik-forward-auth.loadbalancer.server.port=4181"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
@@ -52,6 +52,7 @@ services:
       - traefik-forward-auth
     image: "traefik:v2.5"
     command:
+      - "--api.dashboard=true"
       - "--api.insecure=true"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
@@ -60,6 +61,8 @@ services:
       - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
     ports:
       - 443:443
+      - 80:80
+      - 8080:8080
     volumes:
       - letsencrypt:/letsencrypt
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
