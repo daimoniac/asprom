@@ -12,6 +12,16 @@ Don't be afraid - it is easily installed, very user-friendly and doesn't require
 How to install
 --------------
 
+## docker
+this includes everything - automatic tls and google auth delegation, hooray.
+
+```
+cp env.example .env
+docker-compose up -d
+```
+
+## classic
+
 ### Runtime
 
 I am using asprom on debian wheezy, so this install guide references apt-get. I'm sure you can translate that to the package manager of your choice distribution.
