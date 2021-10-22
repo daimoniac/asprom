@@ -17,6 +17,7 @@ this includes everything - automatic tls and google auth delegation, hooray.
 
 ```
 cp env.example .env
+vim .env
 docker-compose up -d
 ```
 
