@@ -37,7 +37,7 @@ def before_request():
     '''
     username = None
     try:
-        username = request.auth[0]
+        username = request.get_header("X-Forwarded-User", request.auth[0])
     except:
         pass
 

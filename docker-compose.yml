@@ -45,7 +45,7 @@ services:
         #- "traefik.http.middlewares.traefik-forward-auth.headers.customrequestheaders.X-Forwarded-Proto = https" leads to error, multiple middlewares
       - "traefik.http.services.traefik-forward-auth.loadbalancer.server.port=4181"
     volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "${DOCKER_SOCKET}:/var/run/docker.sock:ro"
   traefik:
     restart: always
     depends_on:
@@ -60,14 +60,15 @@ services:
       - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
       - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
     ports:
-      - 443:443
-      - 80:80
+      - ${SSL_PORT}:443
+      - 8081:80
       - 8080:8080
     volumes:
       - letsencrypt:/letsencrypt
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "${DOCKER_SOCKET}:/var/run/docker.sock:ro"
 
 volumes:
   mysqldata:
   crontabs:
   letsencrypt:
+
