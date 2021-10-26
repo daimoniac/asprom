@@ -21,45 +21,7 @@ vim .env
 docker-compose up -d
 ```
 
-## classic
-
-### Runtime
-
-I am using asprom on debian wheezy, so this install guide references apt-get. I'm sure you can translate that to the package manager of your choice distribution.
-
-`apt-get install cron python python-pip git mysql-server nmap python-mysqldb python-nmap`
-
-install the remaining python dependencies directly from pypi.
-
-`pip install python-crontab netaddr paste bottle config croniter`
-
-su to an unprivileged user, then clone the git repository.
-
-```bash
-cd ~
-git clone https://github.com/daimoniac/asprom.git
-cd asprom
-```
-
-
-### Database
-
-edit etc/asprom.cfg and set your database parameters.
-
-create an empty database and grant the user you just specified all rights to it.
-
-```sql
-mysql -uroot -p
-> create database asprom;
-> grant all privileges on asprom.* to asprom@localhost identified by '<arbitrarypassword>';
-> exit;
-```
-
-import the ddl structure from the ddl.sql file:
-
-`mysql -uroot -p asprom < db/ddl.sql`
-
-### Running the GUI
+## Running the GUI
 
 You are done! Start the GUI:
 
