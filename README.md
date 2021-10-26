@@ -13,7 +13,7 @@ How to install
 --------------
 
 ## docker
-this includes everything - automatic tls and google auth delegation, hooray.
+this includes everything - automatic tls and oauth delegation, hooray.
 
 ```
 cp env.example .env
