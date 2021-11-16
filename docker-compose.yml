@@ -9,12 +9,6 @@ services:
       - mysql
     volumes:
       - crontabs:/var/spool/cron/crontabs
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.asprom.rule=Host(`${SSL_HOSTNAME}`)"
-      - "traefik.http.routers.asprom.entrypoints=websecure"
-      - "traefik.http.routers.asprom.tls.certresolver=myresolver"
-      - "traefik.http.routers.asprom.middlewares=traefik-forward-auth"
   mysql:
     restart: always
     image: mysql:8.0
@@ -29,46 +23,7 @@ services:
       - "mysqldata:/var/lib/mysql"
       - "./db/ddl.sql:/docker-entrypoint-initdb.d/1.sql"
       - "./docker/my_mem.cnf:/etc/mysql/conf.d/my_mem.cnf"
-  traefik-forward-auth:
-    restart: always
-    image: thomseddon/traefik-forward-auth:2
-    environment:
-      - PROVIDERS_GOOGLE_CLIENT_ID
-      - PROVIDERS_GOOGLE_CLIENT_SECRET
-      - SECRET=something-random
-      - INSECURE_COOKIE=true # Example assumes no https, do not use in production
-        #- LOG_LEVEL=debug
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.middlewares.traefik-forward-auth.forwardauth.address=http://traefik-forward-auth:4181"
-      - "traefik.http.middlewares.traefik-forward-auth.forwardauth.authResponseHeaders=X-Forwarded-User"
-        #- "traefik.http.middlewares.traefik-forward-auth.headers.customrequestheaders.X-Forwarded-Proto = https" leads to error, multiple middlewares
-      - "traefik.http.services.traefik-forward-auth.loadbalancer.server.port=4181"
-    volumes:
-      - "${DOCKER_SOCKET}:/var/run/docker.sock:ro"
-  traefik:
-    restart: always
-    depends_on:
-      - traefik-forward-auth
-    image: "traefik:v2.5"
-    command:
-      - "--api.dashboard=true"
-      - "--api.insecure=true"
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.websecure.address=:443"
-      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
-      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
-    ports:
-      - ${SSL_PORT}:443
-      - 8081:80
-      - 8080:8080
-    volumes:
-      - letsencrypt:/letsencrypt
-      - "${DOCKER_SOCKET}:/var/run/docker.sock:ro"
-
 volumes:
   mysqldata:
   crontabs:
-  letsencrypt:
 

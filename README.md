@@ -13,11 +13,10 @@ How to install
 --------------
 
 ## docker
-this includes everything - automatic tls and oauth delegation, hooray.
+this includes everything.
 
 ```
 cp env.example .env
-vim .env
 docker-compose up -d
 ```
 
