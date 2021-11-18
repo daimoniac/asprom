@@ -45,7 +45,7 @@ def main():
     '''
     parser = argparse.ArgumentParser(description='''Scans an IP Range for
     asprom. Needs nmap installed on the sensor host.''')
-    parser.add_argument('target', metavar="TARGET", type=__targetFormat,
+    parser.add_argument('target', metavar="TARGET", 
                    help='the hostname/ip/ip range to be scanned')
     parser.add_argument('-o', '--extra-options', default='',
                    help='extra options to be passed to nmap')
@@ -62,29 +62,6 @@ def main():
     initDB(localconf)
     scan(args.target, args.port_range, args.extra_options, args.job_id)
     closeDB()
-
-
-def __targetFormat(v):
-    '''
-    internal method used by argparse to check if the target argument is in
-    fact an IP, Hostname or CIDR Range.
-
-    @param v: the string to check
-    @return boolean.
-    '''
-    try:
-        #cidr range
-        return re.match(r"^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/(\d|[1-2]\d|3[0-2]))?$", v).group(0)
-    except:
-        try:
-            #hostname
-            return re.match(r"^(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9\-]*\
-            [a-zA-Z0-9])\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9\-]*[A-Za-z0-9])$",
-            v).group(0)
-        except Exception:
-            raise argparse.ArgumentTypeError("String '%s' does not match \
-             required format" % (v,))
-
 
 if __name__ == '__main__':
     main()
