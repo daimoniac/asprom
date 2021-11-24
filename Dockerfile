@@ -13,6 +13,7 @@ WORKDIR /asprom
 COPY . .
 # fix old style class in python-crontab leading to exception
 RUN patch -p0 /usr/local/lib/python2.7/dist-packages/crontab.py < docker/patch-crontab.py
+RUN chmod 640 aspromNagiosCheck.py
 EXPOSE 8080
 ENTRYPOINT ["/tini", "--"]
 CMD ["docker/start.sh"]
