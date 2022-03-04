@@ -22,11 +22,9 @@ docker-compose up -d
 
 ## Running the GUI
 
-You are done! Start the GUI:
+You are done! Open the GUI:
 
-`python aspromGUI.py`
-
-and navigate to [http://localhost:8080](http://localhost:8080).
+[http://localhost:8080](http://localhost:8080).
 
 
 ### First steps
