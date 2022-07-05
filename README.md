@@ -45,6 +45,19 @@ When you have done this with all the IP Ranges you are interested in, you have f
 
 In the future, you will be alerted if there are any new services appearing in the defined IP ranges on the website.
 
+### deleting machines and services from inventory
+currently the UI is missing for deleting old machines and services from inventory.
+in the meantime, use the following queries:
+
+```
+IP=1.2.3.4
+delete from servicelog where serviceId in (select id from services where machineId = (select id from machines m where m.ip='$IP'));
+delete from changelog where serviceId in (select id from services where machineId = (select id from machines m where m.ip='$IP'));
+delete from services where machineId = (select id from machines m where m.ip='$IP');
+delete from machinelog where machineId = (select id from machines m where m.ip='$IP');
+delete from machines where ip='$IP';
+```
+
 ### Nagios
 
 To be alerted actively with the monitoring tool of your choice, please use the script aspromNagiosCheck.py as standard nagios plugin.
