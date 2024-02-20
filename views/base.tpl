@@ -34,8 +34,8 @@
 					<ul class="nav nav-tabs nav-fixed-top" role="tablist">
 					  <li {{! 'class="active"' if title == "alerts-exposed" else "" }}><a href="alerts-exposed">alerts: exposed</a></li>
 					  <li {{! 'class="active"' if title == "alerts-closed" else "" }}><a href="alerts-closed">alerts: closed</a></li>
-					  <li {{! 'class="active"' if title == "neat line" else "" }}><a href="neatline">neat line</a></li>
-					  <li {{! 'class="active"' if title == "forensic" else "" }}><a href="forensic">forensic</a></li>
+					  <li {{! 'class="active"' if title == "baseline" else "" }}><a href="baseline">baseline</a></li>
+					  <li {{! 'class="active"' if title == "posture" else "" }}><a href="posture">posture</a></li>
 					  <li {{! 'class="active"' if title == "schedule" else "" }}><a href="schedule">schedule</a></li>
 					</ul>
 		    	</header>

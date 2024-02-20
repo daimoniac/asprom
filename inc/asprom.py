@@ -115,8 +115,8 @@ class AspromModel(object):
 
     def getNeatline(self):
         '''
-        returns row data for the neatline view.
-        @return returns row data for the neatline view.
+        returns row data for the baseline view.
+        @return returns row data for the baseline view.
         '''
         cur = request.db.cursor(mdb.cursors.DictCursor)
         q = """select m.ip, m.hostname, s.id, s.port, s.machineId,
@@ -605,7 +605,7 @@ class Controller(object):
     @staticmethod
     def approve(serviceid, justification, username):
         '''
-        Using this method, a service can be approved to the neatline.
+        Using this method, a service can be approved to the baseline.
 
         @param    serviceid:        The Service ID to be approved.
         @param    justification:    a business justification for the service
@@ -617,7 +617,7 @@ class Controller(object):
     @staticmethod
     def remove(serviceid, justification, username):
         '''
-        Using this method, a service can be removed from the neatline.
+        Using this method, a service can be removed from the baseline.
 
         @param    serviceid:       The Service ID to be removed.
         @param    justification:   a business justification for the service to
@@ -834,10 +834,10 @@ class Service(object):
 
     def approve(self, justification, username, neat=True):
         '''
-        approve this service and add it to the neat line
+        approve this service and add it to the baseline
 
         @param justification: a business justification.
-        @param neat: true for approval. if false, remove from neat line. this
+        @param neat: true for approval. if false, remove from baseline. this
          is used by the method remove().
         '''
 
@@ -853,7 +853,7 @@ class Service(object):
 
     def remove(self, justification, username):
         '''
-        remove this service from the neat line.
+        remove this service from the baseline.
 
         @param justification: a business justification.
         '''

@@ -83,20 +83,20 @@ def serve_alertsclosed():
     return template('views/alerts-closed')
 
 
-@route('/neatline')
-def serve_neatline():
+@route('/baseline')
+def serve_baseline():
     '''
-    Presents view: http:///neatline.
+    Presents view: http:///baseline.
     '''
-    return template('views/neatline')
+    return template('views/baseline')
 
 
-@route('/forensic')
+@route('/posture')
 def serve_forensic():
     '''
-    Presents view: http:///forensic.
+    Presents view: http:///posture.
     '''
-    return template('views/forensic')
+    return template('views/posture')
 
 
 @route('/schedule')
@@ -156,15 +156,15 @@ def returnjson(filename):
     to json.
 
     @param    filename    the json view to be shown. can be any of
-        alerts-exposed, alerts-closed, neatline, forensic or schedule.
+        alerts-exposed, alerts-closed, baseline, posture or schedule.
     '''
     if filename == 'alerts-exposed':
         return M.tojson(M.getAlertsExposed())
     elif filename == 'alerts-closed':
         return M.tojson(M.getAlertsClosed())
-    elif filename == 'neatline':
+    elif filename == 'baseline':
         return M.tojson(M.getNeatline())
-    elif filename == 'forensic':
+    elif filename == 'posture':
         return M.tojson(M.getForensic())
     elif filename == 'schedule':
         return M.tojson(SM.getSchedule())
@@ -281,7 +281,7 @@ def serve_approve():
     '''
     Activates controller: http:///controller/approve.
     The arguments are to be passed by using the HTTP POST method.
-    Using this method, a service can be approved to the neatline.
+    Using this method, a service can be approved to the baseline.
 
     @param    pk    The Service ID to be approved.
     @param    value a business justification for the service to be approved.
@@ -299,7 +299,7 @@ def serve_remove():
     '''
     Activates controller: http:///controller/remove.
     The arguments are to be passed by using the HTTP POST method.
-    Using this method, a service can be removed from the neatline.
+    Using this method, a service can be removed from the baseline.
 
     @param    pk    The Service ID to be removed.
     @param    value a business justification for the service to be removed.

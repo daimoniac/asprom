@@ -23,11 +23,11 @@
     			<hr>
     			<div class="jumbotron">
 				   <h2>About this view</h2>
-					  <p>These Ports are closed, but the "neat line" specifies a business justification for them to be open.</p>
+					  <p>These Ports are closed, but the "baseline" specifies a business justification for them to be open.</p>
 					  <p class="moretolearn">Normally, this is not a security risk, but may hint at a service failure. These alerts are non-critical by default.
 						You can mark an alert as critical by clicking the star button <i class="glyphicon glyphicon-star"></i>.
 						To get completely rid of an alert, reopen the port and rescan using the magnifying glass <i class="glyphicon glyphicon-search"></i> - 
-						or remove it from the "neat line" by clicking the red delete button <i class="glyphicon glyphicon-remove"></i> and entering a business justification.
+						or remove it from the "baseline" by clicking the red delete button <i class="glyphicon glyphicon-remove"></i> and entering a business justification.
 					  <p><a class="btn btn-primary btn-lg" role="button" id="learnmore">Learn more</a></p>
 				</div>
 				

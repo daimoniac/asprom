@@ -38,7 +38,7 @@ Asprom will notify you when the scan is done.
 You should then see some alerts in the tab "alerts: exposed".
 Try mitigating these alerts by clicking the "star" icon.
 
-You can accept these alerts to the neat line by clicking the "approve" icon and entering a business justification.
+You can accept these alerts to the baseline by clicking the "approve" icon and entering a business justification.
 This way, you tell asprom: It's okay, I want that port to be open.
 
 When you have done this with all the IP Ranges you are interested in, you have finished your initial configuration and the bulk of the work.

@@ -1,6 +1,6 @@
 function operateFormatterExposed(value, row, index) {
     return [
-        '<toggle class="approve" title="Add to neat line">',
+        '<toggle class="approve" title="Add to baseline">',
             '<i data-type="text" data-pk="' + row.id + '" data-name="ap' + row.id + '" data-title="Enter business justification" data-value="" class="glyphicon glyphicon-ok"></i>',
         '</toggle>',
         '<toggle class="rescan ml10" title="Rescan">',
@@ -14,7 +14,7 @@ function operateFormatterExposed(value, row, index) {
 
 function operateFormatterClosed(value, row, index) {
     return [
-        '<toggle class="remove" title="Remove from neat line">',
+        '<toggle class="remove" title="Remove from baseline">',
         	'<i data-type="text" data-pk="' + row.id + '" data-name="rm' + row.id + '" data-title="Enter business justification" data-value="" class="glyphicon glyphicon-remove"></i>',
 	    '</toggle>',
 	    '<toggle class="rescan ml10" title="Rescan">',
@@ -28,7 +28,7 @@ function operateFormatterClosed(value, row, index) {
 
 function operateFormatterNeatline(value, row, index) {
     return [
-        '<toggle class="remove" title="Remove from neat line">',
+        '<toggle class="remove" title="Remove from baseline">',
         '<i data-type="text" data-pk="' + row.id + '" data-name="rm' + row.id + '" data-title="Enter business justification" data-value="" class="glyphicon glyphicon-remove"></i>',
 	    '</toggle>',
 	    '<toggle class="rescan ml10" title="Rescan">',
