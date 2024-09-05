@@ -24,7 +24,10 @@ docker-compose up -d
 
 You are done! Open the GUI:
 
-[http://localhost:8080](http://localhost:8080).
+[http://localhost:8100](http://localhost:8100).
+
+## prometheus metrics
+[http://localhost:5000](http://localhost:5000).
 
 
 ### First steps

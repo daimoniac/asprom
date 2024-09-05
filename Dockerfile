@@ -8,7 +8,7 @@ RUN apt-get update && \
     apt-get -y install cron python2.7 nmap python-mysqldb python-nmap patch && \
     rm -rf /var/lib/apt/lists/*
 RUN python2 /get-pip.py 
-RUN pip2 install python-crontab==2.6.0 netaddr==0.8.0 paste==3.5.0 bottle==0.12.19 config==0.4.2 croniter==1.0.15
+RUN pip2 install python-crontab==2.6.0 netaddr==0.8.0 paste==3.5.0 bottle==0.12.19 config==0.4.2 croniter==1.0.15 prometheus-client
 WORKDIR /asprom
 COPY . .
 # fix old style class in python-crontab leading to exception
