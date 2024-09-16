@@ -5,29 +5,32 @@ Created on Sep 05, 2024
 @namespace asprom.aspromNagiosCheck
 small and nice metrics server for asprom
 '''
-from inc.asprom import initDB, closeDB, AspromModel, Cfg, genMessages
-import sys
+from inc.asprom import initDB, closeDB, AspromModel, Cfg
 from time import sleep
 from prometheus_client import start_http_server, Gauge
+from pprint import pprint
 
 localconf = Cfg()
-initDB(localconf)
-M = AspromModel()
 
-def getcounter():
-    #exposed services
-    messageCritExposed, messageWarnExposed = genMessages(M.getAlertsExposed())
+alertsExposed = Gauge('alerts_exposed', 'These Ports are unintentionally open and therefore to be checked with the highest priority.')
+alertsClosed = Gauge('alerts_closed', 'These Ports are unintentionally open and therefore to be checked with the highest priority.')
 
-    return len(messageCritExposed)+len(messageWarnExposed)
+def refreshMetrics():
+    initDB(localconf)
+    M = AspromModel()
 
-g = Gauge('alerts_open', 'These Ports are unintentionally open and therefore to be checked with the highest priority.')
+    alertsExposed.set(len(M.getAlertsExposed()))
+    alertsClosed.set(len(M.getAlertsClosed()))
 
-g.set(0)
+    closeDB()
+
 
 if __name__ == '__main__':
 
+    pprint("starting asprom metrics server")
     # Start up the server to expose the metrics.
     start_http_server(5000)
-    while(True) :
-      g.set(getcounter())
-      sleep (1000)
+
+    while True:
+        sleep(5)
+        refreshMetrics()
