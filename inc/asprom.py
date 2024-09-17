@@ -13,11 +13,12 @@ import copy
 from datetime import datetime
 from config import Config
 from os import path
-from inc.bottle import response, request
+from bottle import response, request
 from json import dumps
 from crontab import CronTab
 from netaddr import IPAddress, IPNetwork, AddrFormatError
 from nmap import nmap
+from anyascii import anyascii
 import MySQLdb as mdb
 
 
@@ -80,6 +81,7 @@ class AspromModel(object):
         cur.execute(q)
 
         rows = cur.fetchall()
+        request.db.commit()
 
         for row in rows:
             row['date'] = datetime.strftime(row['date'], "%Y-%m-%d %H:%M")
@@ -103,6 +105,7 @@ class AspromModel(object):
         cur.execute(q)
 
         rows = cur.fetchall()
+        request.db.commit()
 
         for row in rows:
             row['date'] = datetime.strftime(row['date'], "%Y-%m-%d %H:%M")
@@ -315,12 +318,12 @@ class AspromScheduleModel(CronTab):
         @param    extraparams:  extra command line parameters for nmap.
         '''
 
-        print "Controller.changeJob Input: "
-        print "jobid: " + jobid
-        print "cronval: " + cronval
-        print "iprange: " + iprange
-        print "portrange: " + portrange
-        print "extraparams: " + extraparams
+        print("Controller.changeJob Input: ")
+        print("jobid: " + jobid)
+        print("cronval: " + cronval)
+        print("iprange: " + iprange)
+        print("portrange: " + portrange)
+        print("extraparams: " + extraparams)
 
         # parameter assertions
         assert re.match(
@@ -345,7 +348,7 @@ class AspromScheduleModel(CronTab):
 
         job.enable()
         self.render()
-        print "job enabled: " + str(job.is_enabled())
+        print("job enabled: " + str(job.is_enabled()))
         self.write()
         self.read()
 
@@ -523,7 +526,7 @@ class Controller(object):
 
         if jobs[jobid]:
             j = jobs[jobid]
-            print "rescanning job: " + str(j)
+            print("rescanning job: " + str(j))
             ps = scan(j['iprange'], j['ports'], j['params'], jobid)
 
         return ps
@@ -553,20 +556,20 @@ class Controller(object):
             try:
                 if machine.ip in IPNetwork(job['iprange']):
                     jobid = job['id']
-                    print "IP %s in range %s - jobid %s" % (machine.ip, job[
-                        'iprange'], job['id'])
+                    print("IP %s in range %s - jobid %s" % (machine.ip, job[
+                        'iprange'], job['id']))
                     break
-            except AddrFormatError, e:
-                print "%s - trying by name resolution" % e
+            except AddrFormatError as e:
+                print("%s - trying by name resolution" % e)
                 # if not, check if iprange resolves to the given machine
                 try:
                     if str(machine.ip) == socket.gethostbyname(job['iprange']):
                         jobid = job['id']
-                        print "IP %s == %s - jobid %s" % (machine.ip, job[
-                            'iprange'], job['id'])
+                        print("IP %s == %s - jobid %s" % (machine.ip, job[
+                            'iprange'], job['id']))
                         break
-                except Exception, e:
-                    print "shit happened : %s" % e
+                except Exception as e:
+                    print("shit happened : %s" % e)
 
         if jobid:
             ps = scan(str(machine.ip), str(port) if port else job['ports'],
@@ -592,7 +595,7 @@ class Controller(object):
         '''
         flips the criticality of the service.
         Flipping sets the service criticality to WARNING if it was CRITICAL
-        before and the other way round. 
+        before and the other way round.
 
         @param    serviceid    The Service whose criticality should be flipped.
         @param    page         Denominates the view on which the criticality of
@@ -726,11 +729,11 @@ class Service(object):
             VALUES (%d, %d, %d, "%s", "%s", "%s", NOW(), NOW())
             ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id), lsdate=NOW(); """
             % (portno, 1, mach.id, product, extrainfo, version))
-        print q
+        print(q)
         cur.execute(q)
 
         mid = cur.lastrowid
-        print "Service ID inserted: %s" % mid
+        print("Service ID inserted: %s" % mid)
 
         ## check if last log entry is negative
         q = (
@@ -828,7 +831,7 @@ class Service(object):
         q = """INSERT INTO criticality (serviceId, %s)
             VALUES (%d, %d)
             ON DUPLICATE KEY UPDATE %s=%d""" % (col, self.id, val, col, val)
-        print q
+        print(q)
         cur.execute(q)
         request.db.commit()
 
@@ -915,11 +918,11 @@ class Machine(object):
             hostname="%s", lsdate=NOW(); """
             % (name, ip, 1, name))
 
-        print q
+        print(q)
         cur.execute(q)
 
         mid = cur.lastrowid
-        print "Machine ID inserted: %s" % mid
+        print("Machine ID inserted: %s" % mid)
 
         ## check if last log entry is negative
         q = ("""select exposed from machinelog where machineId=%d
@@ -964,7 +967,7 @@ class Machine(object):
         '''
         delete self.
         '''
-        print "deleting machine %s" % self.id
+        print("deleting machine %s" % self.id)
         cur = request.db.cursor()
         ## check if last log entry is positive
         q = ("""select exposed from machinelog where machineId=%d
@@ -1078,22 +1081,21 @@ def scan(target, port_range, extra_options, job_id, sensor='localhost'):
         #start port scanner
         ps = nmap.PortScanner()
         #recode to ascii - utf not allowed
-        ps.scan(target.encode('ascii'), port_range.encode('ascii') if
-            port_range else None, extra_options.encode('ascii'))
+        ps.scan(anyascii(target), anyascii(port_range) if
+            port_range else None, anyascii(extra_options))
 
         cur = request.db.cursor()
 
         #machines
         #remove old machines
-        oldmachs = Machine.getIPsInRange(target.encode('ascii'),
+        oldmachs = Machine.getIPsInRange(anyascii(target),
             exposedOnly=True)
-        print "known machines in range %s: %s" % (target, oldmachs)
-        print "machines found by scan: %s" % ps.all_hosts()
-        for hostip in filter(lambda x: False if x in ps.all_hosts() else True,
-            oldmachs.keys()):
+        print("known machines in range %s: %s" % (target, oldmachs))
+        print("machines found by scan: %s" % ps.all_hosts())
+        for hostip in [x for x in list(oldmachs.keys()) if (False if x in ps.all_hosts() else True)]:
             mach = Machine(oldmachs[hostip])
             for svc in mach.getServices(exposedOnly=True):
-                print "deleting service %s on %s" % (svc.port, hostip)
+                print("deleting service %s on %s" % (svc.port, hostip))
                 svc.delete()
 
         #create new machines, add/remove services
@@ -1112,22 +1114,22 @@ def scan(target, port_range, extra_options, job_id, sensor='localhost'):
             mach = Machine.create(host['hostname'], hostip)
             #open ports
             if 'tcp' in host:
-                portnumbers = filter(lambda x: True if host['tcp'][x]['state']
-                    == 'open' else False, host['tcp'].keys())
+                portnumbers = [x for x in list(host['tcp'].keys()) if (True if host['tcp'][x]['state']
+                    == 'open' else False)]
                 #delete old services
                 for svc in mach.getServices(exposedOnly=True):
                     # if port not detected anymore and in scanned range, delete
                     # it
                     if not svc.port in portnumbers and (svc.inRange(port_range
                         ) if port_range else True):
-                        print "deleting %s" % svc.port
+                        print("deleting %s" % svc.port)
                         svc.delete()
 
                 #create new services
                 for portno in portnumbers:
                     port = host['tcp'][portno]
                     if port['state'] == 'open':
-                        print "creating %s" % portno
+                        print("creating %s" % portno)
                         Service.create(mach, portno, port['product'] if
                             "product" in port else None, port['version'] if
                             "version" in port else None, port['extrainfo'] if
@@ -1140,17 +1142,16 @@ def scan(target, port_range, extra_options, job_id, sensor='localhost'):
     except:
         state = "FAILED"
         message = traceback.format_exc()
-        print message
+        print(message)
 
     finally:
         #log
         cur = request.db.cursor()
-        q = ("""UPDATE scanlog SET state="%s", enddate=NOW(), output=%s
-            WHERE ID=%d"""
-            % (state, "'%s'" % request.db.escape_string(message) if message
-            else "NULL", logid))
+        q = """UPDATE scanlog SET state="%s", enddate=NOW(), output=%s
+            WHERE ID=%s"""
 
-        cur.execute(q)
+        cur.execute(q, (state, "'%s'" % request.db.escape_string(message) if message
+            else "NULL", logid))
 
         request.db.commit()
 
@@ -1161,9 +1162,14 @@ def initDB(localconf):
     '''
     inits the database into the bottle request scope.
     '''
-    request.cfg = localconf
-    request.db = mdb.connect(**request.cfg.db.data)
-
+    try:
+        request.cfg = localconf
+    except AttributeError as e:
+        pass
+    try:
+        request.db = mdb.connect(**request.cfg.db.data)
+    except AttributeError as e:
+        pass    
 
 def closeDB():
     '''

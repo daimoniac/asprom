@@ -7,7 +7,7 @@ Main Script for the asprom GUI. This script presents a webserver socket to
 which client browsers can connect to.
 Also, it orchestrates URL calls between the model, view and controller classes.
 '''
-from inc.bottle import (route, run, static_file, abort, redirect, template,
+from bottle import (route, run, static_file, abort, redirect, template,
                         post, request, hook, response)
 from inc.asprom import (AspromModel, AspromScheduleModel, Controller, initDB,
                         closeDB, Cfg)
