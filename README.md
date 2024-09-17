@@ -6,8 +6,6 @@ The scanner automatically and regularly portscans your networks using nmap and r
 
 This functionality can be used to ascertain PCI-DSS, BSI-Grundschutz or DIN 27001 compliance of stateful firewalls.
 
-Don't be afraid - it is easily installed, very user-friendly and doesn't require any knowledge besides basic tcp/ip concepts :-)
-
 
 How to install
 --------------
@@ -27,7 +25,9 @@ You are done! Open the GUI:
 [http://localhost:8100](http://localhost:8100).
 
 ## prometheus metrics
-[http://localhost:5000](http://localhost:5000).
+prometheus metrics about open ports, deviations from the baseline etc. are provided via
+
+[http://localhost:5000/metrics](http://localhost:5000/metrics).
 
 
 ### First steps
