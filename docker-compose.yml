@@ -1,21 +1,10 @@
 version: "3.7"
 services:
-  asprom-metrics:
+  asprom:
     restart: always
     environment:
       PYTHONUNBUFFERED: 1
-    build:
-      context: .
-      dockerfile: Dockerfile
-    command:
-      - python
-      - aspromMetrics.py
-    depends_on:
-      - mysql
-    ports:
-      - 5000:5000
-  asprom:
-    restart: always
+    image: asprom
     build:
       context: .
       dockerfile: Dockerfile
@@ -25,6 +14,18 @@ services:
       - crontabs:/var/spool/cron/crontabs
     ports:
       - 8100:8080
+  asprom-metrics:
+    restart: always
+    environment:
+      PYTHONUNBUFFERED: 1
+    image: asprom
+    command:
+      - python3
+      - aspromMetrics.py
+    depends_on:
+      - mysql
+    ports:
+      - 5000:5000
   mysql:
     restart: always
     image: mysql:8.0

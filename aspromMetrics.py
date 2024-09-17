@@ -15,15 +15,13 @@ localconf = Cfg()
 alertsExposed = Gauge('alerts_exposed', 'These Ports are unintentionally open and therefore to be checked with the highest priority.')
 alertsClosed = Gauge('alerts_closed', 'These Ports are unintentionally open and therefore to be checked with the highest priority.')
 
+initDB(localconf)
+M = AspromModel()
+
 def refreshMetrics():
-    initDB(localconf)
-    M = AspromModel()
 
     alertsExposed.set(len(M.getAlertsExposed()))
     alertsClosed.set(len(M.getAlertsClosed()))
-
-    closeDB()
-
 
 if __name__ == '__main__':
 

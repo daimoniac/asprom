@@ -1,3 +1,3 @@
 #!/bin/bash
 cron
-python aspromGUI.py
+python3 aspromGUI.py
