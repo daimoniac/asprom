@@ -121,7 +121,7 @@ window.operateEvents = {
         console.log(value, row, index);
     },
     'click .deletemachine': function (e, value, row, index) {
-        if (confirm('Are you sure you want to delete this machine and all its services?')) {
+        if (confirm('The whole machine will be deleted (all service entries). Are you sure you want to delete this machine and all its services?')) {
             subDeleteMachine(row.machineId);
         }
     }
