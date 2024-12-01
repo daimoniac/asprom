@@ -13,7 +13,7 @@ services:
     volumes:
       - crontabs:/var/spool/cron/crontabs
     ports:
-      - 8100:8080
+      - 8080:8080
   asprom-metrics:
     restart: always
     environment:

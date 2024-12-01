@@ -9,7 +9,7 @@ Also, it orchestrates URL calls between the model, view and controller classes.
 '''
 from bottle import (route, run, static_file, abort, redirect, template,
                         post, request, hook, response)
-from inc.asprom import (AspromModel, AspromScheduleModel, Controller, initDB,
+from inc.asprom import (AspromModel, AspromScheduleModel, Controller, Machine, initDB,
                         closeDB, Cfg)
 
 # Variable definitions
@@ -239,6 +239,26 @@ def serve_rescanService(serviceid):
     closeDB()
     return rv
 
+@route('/controller/deletemachine/<machineid:re:[0-9]+>')
+def serve_deleteMachine(machineid):
+    '''
+    Activates controller: http:///controller/deletemachine/<machineid>.
+    Deletes the machine and all its associated services from inventory.
+
+    @param    machineid    The Machine ID to be deleted.
+    '''
+    assert machineid.isdigit()
+    machine = Machine(int(machineid))
+    
+    # Delete all services first
+    for service in machine.getServices():
+        service.delete()
+        
+    # Then delete the machine
+    machine.delete()
+    
+    closeDB()
+    return "ok"
 
 @route('/controller/deletejob/<jobid:re:[0-9a-f]{8}-[0-9a-f]{4}-\
 [0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>')

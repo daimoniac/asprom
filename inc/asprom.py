@@ -965,8 +965,9 @@ class Machine(object):
 
     def delete(self):
         '''
-        delete self.
+        Delete this machine and clean up related records.
         '''
+
         print("deleting machine %s" % self.id)
         cur = request.db.cursor()
         ## check if last log entry is positive

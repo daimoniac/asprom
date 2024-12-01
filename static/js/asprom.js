@@ -54,9 +54,12 @@ function operateFormatterSchedule(value, row, index) {
 
 function operateFormatterForensic(value, row, index) {
     return [
-	    '<toggle class="rescan ml10" title="Rescan">',
-	        '<i class="glyphicon glyphicon-search"></i>',
-	    '</toggle>',
+        '<toggle class="rescan ml10" title="Rescan">',
+            '<i class="glyphicon glyphicon-search"></i>',
+        '</toggle>',
+        '<toggle class="deletemachine ml10" title="Delete">',
+            '<i class="glyphicon glyphicon-trash"></i>', 
+        '</toggle>'
     ].join('');
 }
 
@@ -117,6 +120,11 @@ window.operateEvents = {
         subDeleteJob(row.id);
         console.log(value, row, index);
     },
+    'click .deletemachine': function (e, value, row, index) {
+        if (confirm('Are you sure you want to delete this machine and all its services?')) {
+            subDeleteMachine(row.machineId);
+        }
+    }
 };
 
 // Button events
@@ -248,4 +256,19 @@ $(document).ready(function() {
     $('#log').load('/log');
     
 });
+
+function subDeleteMachine(machineId) {
+    $.ajax({
+        url: "/controller/deletemachine/" + machineId,
+        type: "GET", 
+        cache: false,
+        success: function(json) {
+            $('#datatable').bootstrapTable('refresh');
+            addAlert("Successfully deleted machine and its services", 'success', true);
+        },
+        error: function(xhr, status, errorThrown) {
+            addAlert("Error deleting machine", 'danger');
+        }
+    });
+}
 

@@ -22,7 +22,7 @@ docker-compose up -d
 
 You are done! Open the GUI:
 
-[http://localhost:8100](http://localhost:8100).
+[http://localhost:8080](http://localhost:8080).
 
 ## prometheus metrics
 prometheus metrics about open ports, deviations from the baseline etc. are provided via
