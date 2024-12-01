@@ -226,6 +226,8 @@ $(document).ready(function() {
     	url: '/controller/approve',
     	type: 'text',
     	emptytext: '',
+    	onblur: 'submit',
+    	showbuttons: true,
     	
         ajaxOptions: {
         	success: function( json ) {
@@ -239,6 +241,8 @@ $(document).ready(function() {
     	url: '/controller/remove',
     	type: 'text',
     	emptytext: '',
+    	onblur: 'submit',
+    	showbuttons: true,
     	
         ajaxOptions: {
         	success: function( json ) {
