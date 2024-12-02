@@ -1,68 +1,45 @@
-asprom - assault profile monitor
-================================
+# asprom - Assault Profile Monitor
 
-asprom is a firewall compliance scanner. You define a profile of which services your network(s) should offer to users.
-The scanner automatically and regularly portscans your networks using nmap and reports any aberrations from the defined profile.
+asprom is a network security compliance scanner that monitors Layer 4 firewall configurations. It allows you to define service profiles for your networks and automatically scans them using nmap to detect any deviations from the established baseline.
 
-This functionality can be used to ascertain PCI-DSS, BSI-Grundschutz or DIN 27001 compliance of stateful firewalls.
+This tool helps ensure compliance with security standards such as PCI-DSS, BSI-Grundschutz, and ISO/IEC 27001.
 
+## Quick Start with Docker
 
-How to install
---------------
+The easiest way to get started is using Docker, which includes all dependencies:
 
-## docker
-this includes everything.
-
-```
+```bash
 cp env.example .env
 docker-compose up -d
 ```
 
-## Running the GUI
+Once running, access the GUI at [http://localhost:8080](http://localhost:8080).
 
-You are done! Open the GUI:
+## Getting Started
 
-[http://localhost:8080](http://localhost:8080).
+1. Navigate to the "Schedule" tab
+2. Configure a scan target:
+   - Enter a hostname, IP address, or IP range
+   - Leave "port range" and "extra parameters" empty initially
+3. Click "Add Job" to create the scan
+4. Click the magnifying glass icon to execute the scan immediately
+5. Wait for the scan completion notification
 
-## prometheus metrics
-prometheus metrics about open ports, deviations from the baseline etc. are provided via
+## Managing Alerts
 
-[http://localhost:5000/metrics](http://localhost:5000/metrics).
+After scanning, you'll find detected services under the "Alerts: Exposed" tab. For each alert, you can:
 
+- Click the "star" icon to mark for mitigation
+- Click the "approve" icon to accept it as part of your baseline (requires business justification)
 
-### First steps
+Once you've processed alerts for all your IP ranges, your initial configuration is complete. asprom will now monitor these ranges and alert you to any new services that appear.
 
-Select the tab "Schedule" and define a host name, ip or ip range to scan. You could scan "localhost", for example, your web site, or your local network.
-Leave the fields "port range" and "extra parameters" empty for now.
-After clicking "add job", you should see a new line in the table.
-Click the magnifying glass icon to run the scan right now.
-Asprom will notify you when the scan is done.
+## Monitoring Integration
 
-You should then see some alerts in the tab "alerts: exposed".
-Try mitigating these alerts by clicking the "star" icon.
+### Prometheus Metrics
+Access metrics about open ports and baseline deviations at:
+[http://localhost:5000/metrics](http://localhost:5000/metrics)
 
-You can accept these alerts to the baseline by clicking the "approve" icon and entering a business justification.
-This way, you tell asprom: It's okay, I want that port to be open.
-
-When you have done this with all the IP Ranges you are interested in, you have finished your initial configuration and the bulk of the work.
-
-In the future, you will be alerted if there are any new services appearing in the defined IP ranges on the website.
-
-### deleting machines and services from inventory
-currently the UI is missing for deleting old machines and services from inventory.
-in the meantime, use the following queries:
-
-```
-IP=1.2.3.4
-delete from servicelog where serviceId in (select id from services where machineId = (select id from machines m where m.ip='$IP'));
-delete from changelog where serviceId in (select id from services where machineId = (select id from machines m where m.ip='$IP'));
-delete from services where machineId = (select id from machines m where m.ip='$IP');
-delete from machinelog where machineId = (select id from machines m where m.ip='$IP');
-delete from machines where ip='$IP';
-```
-
-### Nagios
-
-To be alerted actively with the monitoring tool of your choice, please use the script aspromNagiosCheck.py as standard nagios plugin.
-It will say CRITICAL if there is any unknown service present.
+### Nagios Integration
+Use `aspromNagiosCheck.py` as a standard Nagios plugin to receive active alerts. The plugin will return CRITICAL status when unauthorized services are detected.
 
