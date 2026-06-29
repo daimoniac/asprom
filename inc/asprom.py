@@ -6,6 +6,8 @@ Created on Oct 22, 2014
 Library for asprom Scripts.
 """
 
+from __future__ import annotations
+
 import copy
 import re
 import socket
@@ -13,24 +15,36 @@ import traceback
 from datetime import datetime
 from json import dumps
 from os import path
+from typing import Any
 
 import MySQLdb as mdb
 from anyascii import anyascii
-from bottle import request, response
+from bottle import response
 from config import Config
 from crontab import CronTab
 from netaddr import AddrFormatError, IPAddress, IPNetwork
 from nmap import nmap
 
+from inc.db import close_db, get_cfg, get_db, init_db
+from inc.logging import get_logger
 
-class NoJoibIDException(Exception):
+closeDB = close_db
+initDB = init_db
+
+logger = get_logger(__name__)
+
+
+class NoJobIdException(Exception):
     """
     Exception raised for crontab entries not concerning asprom.
     """
 
     def __init__(self, job):
         self.job = job
-        super(NoJoibIDException, self).__init__()
+        super().__init__()
+
+
+NoJoibIDException = NoJobIdException
 
 
 class Cfg(Config):
@@ -47,11 +61,11 @@ class Cfg(Config):
         """
         maindir = path.normpath(path.join(path.dirname(path.realpath(__file__)), path.pardir))
         # read config file
-        super(Cfg, self).__init__(maindir + "/etc/asprom.cfg")
+        super().__init__(maindir + "/etc/asprom.cfg")
         self.maindir = maindir
 
 
-class AspromModel(object):
+class AspromModel:
     """
     This Model abstracts calls to the database. It returns rows of data for
     the views in the GUI.
@@ -67,7 +81,7 @@ class AspromModel(object):
         standard constructor
         """
         self.username = username if username else ""
-        super(AspromModel, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def getAlertsExposed(self):
         """
@@ -75,14 +89,14 @@ class AspromModel(object):
         @return row data for the alerts-exposed view.
         """
         # db connection
-        cur = request.db.cursor(mdb.cursors.DictCursor)
+        cur = get_db().cursor(mdb.cursors.DictCursor)
         q = """SELECT id, hostname, ip, port, product service, version,
             extrainfo, ffdate date, crit
             FROM exposed"""
         cur.execute(q)
 
         rows = cur.fetchall()
-        request.db.commit()
+        get_db().commit()
 
         for row in rows:
             row["date"] = datetime.strftime(row["date"], "%Y-%m-%d %H:%M")
@@ -99,14 +113,14 @@ class AspromModel(object):
         @return returns row data for the alerts-closed view.
         """
         # db connection
-        cur = request.db.cursor(mdb.cursors.DictCursor)
+        cur = get_db().cursor(mdb.cursors.DictCursor)
         q = """SELECT id, hostname, ip, port, product service, version,
             extrainfo, approvaldate date, justification, crit
             FROM closed"""
         cur.execute(q)
 
         rows = cur.fetchall()
-        request.db.commit()
+        get_db().commit()
 
         for row in rows:
             row["date"] = datetime.strftime(row["date"], "%Y-%m-%d %H:%M")
@@ -122,7 +136,7 @@ class AspromModel(object):
         returns row data for the baseline view.
         @return returns row data for the baseline view.
         """
-        cur = request.db.cursor(mdb.cursors.DictCursor)
+        cur = get_db().cursor(mdb.cursors.DictCursor)
         q = """select m.ip, m.hostname, s.id, s.port, s.machineId,
             s.product service, s.version, s.extrainfo, n.justification, n.date
             from services s
@@ -147,7 +161,7 @@ class AspromModel(object):
         returns row data for the forensic view.
         @return returns row data for the forensic view.
         """
-        cur = request.db.cursor(mdb.cursors.DictCursor)
+        cur = get_db().cursor(mdb.cursors.DictCursor)
         q = """select m.ip, m.hostname, s.id, s.port, s.machineId,
             s.product service, s.version, s.extrainfo, s.ffdate date
             from services s
@@ -167,24 +181,20 @@ class AspromModel(object):
 
         return rows
 
-    def getLastLog(self, count):
+    def getLastLog(self, count: int) -> str:
         """
         returns <count> last log entries from the changelog in html format.
 
         @param count: number of lines to return.
         @return <count> last log entries from the changelog in html format.
         """
-        cur = request.db.cursor(mdb.cursors.DictCursor)
-        q = (
-            """select c.date, c.neat, s.port, s.product, m.ip, m.hostname,
+        cur = get_db().cursor(mdb.cursors.DictCursor)
+        q = """select c.date, c.neat, s.port, s.product, m.ip, m.hostname,
         c.justification, c.username from changelog c
         inner join services s on c.serviceId = s.id inner join machines m on
         s.machineId = m.id order by c.id desc
-        limit %d
-            """
-            % count
-        )
-        cur.execute(q)
+        limit %s"""
+        cur.execute(q, (count,))
 
         rows = cur.fetchall()
         html = ""
@@ -243,13 +253,13 @@ class AspromScheduleModel(CronTab):
     schedule = None
 
     ## dictionary of jobs indexed by id
-    jobsByID = dict()
+    jobsByID: dict[str, Any] = {}
 
     def __init__(self, *args, **kwargs):
         """
         standard Constructor
         """
-        super(AspromScheduleModel, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.read()
 
     def read(self, filename=None):
@@ -258,12 +268,14 @@ class AspromScheduleModel(CronTab):
         Additionally fetches log information from the database and fills the
         properties schedule and scheduleLog.
         """
-        super(AspromScheduleModel, self).read(filename=filename)
+        super().read(filename=filename)
         self.scheduleLog = self.__fetchScheduleLog()
         self.schedule = self.__fetchSchedule()
 
     @staticmethod
-    def promoteToIndex(dici, valueKey):
+    def promoteToIndex(
+        dici: list[dict[str, Any]] | list[list[Any]], valueKey: str | int
+    ) -> dict[Any, Any]:
         """
                 index the dic by valueKey.
                 promotes the element on position <valueKey> from each sublist to an
@@ -286,7 +298,8 @@ class AspromScheduleModel(CronTab):
         dic = copy.deepcopy(dici)
         rv = {}
         for row in dic:
-            rv[row.pop(valueKey)] = row
+            key = row.pop(valueKey)  # type: ignore[arg-type]
+            rv[key] = row
 
         return rv
 
@@ -297,7 +310,7 @@ class AspromScheduleModel(CronTab):
 
         @return dictionary of jobs with log information.
         """
-        dbc = request.db.cursor(mdb.cursors.DictCursor)
+        dbc = get_db().cursor(mdb.cursors.DictCursor)
 
         # get last log entry for each job
         q = """select s.jobid, state, startdate, enddate, output from scanlog s
@@ -332,12 +345,14 @@ class AspromScheduleModel(CronTab):
         @param    extraparams:  extra command line parameters for nmap.
         """
 
-        print("Controller.changeJob Input: ")
-        print("jobid: " + jobid)
-        print("cronval: " + cronval)
-        print("iprange: " + iprange)
-        print("portrange: " + portrange)
-        print("extraparams: " + extraparams)
+        logger.debug(
+            "Controller.changeJob input",
+            jobid=jobid,
+            cronval=cronval,
+            iprange=iprange,
+            portrange=portrange,
+            extraparams=extraparams,
+        )
 
         # parameter assertions
         assert re.match("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", jobid)
@@ -353,7 +368,7 @@ class AspromScheduleModel(CronTab):
         job.set_command(
             "python %s/aspromScan.py -j %s %s%s%s"
             % (
-                request.cfg.maindir,
+                get_cfg().maindir,
                 jobid,
                 '-o="%s" ' % extraparams if extraparams else "",
                 "-p %s " % portrange if portrange else "",
@@ -364,7 +379,7 @@ class AspromScheduleModel(CronTab):
 
         job.enable()
         self.render()
-        print("job enabled: " + str(job.is_enabled()))
+        logger.info("job enabled", enabled=job.is_enabled())
         self.write()
         self.read()
 
@@ -491,7 +506,7 @@ class AspromScheduleModel(CronTab):
             # uuid().__str__()
         else:
             # this is no crontab entry for asprom.
-            raise NoJoibIDException("not a crontab entry for asprom, no jobid found: %s" % (job))
+            raise NoJobIdException("not a crontab entry for asprom, no jobid found: %s" % (job))
 
     def getSchedule(self):
         """
@@ -499,6 +514,9 @@ class AspromScheduleModel(CronTab):
          e.g. for GUI table data.
         """
         return self.schedule
+
+    def getScannedRanges(self) -> str:
+        return "\n".join(job["iprange"] for job in self.getSchedule())
 
     def __getScheduleI(self):
         """
@@ -526,12 +544,12 @@ class AspromScheduleModel(CronTab):
                 jobid = jobSpec["id"]
                 self.jobsByID[jobid] = job
 
-            except NoJoibIDException:
+            except NoJobIdException:
                 pass
         return rv
 
 
-class Controller(object):
+class Controller:
     """
     The Controller defines all actions that are possible from within the GUI.
     """
@@ -549,7 +567,7 @@ class Controller(object):
 
         if jobs[jobid]:
             j = jobs[jobid]
-            print("rescanning job: " + str(j))
+            logger.info("rescanning job", job=j)
             ps = scan(j["iprange"], j["ports"], j["params"], jobid)
 
         return ps
@@ -579,18 +597,28 @@ class Controller(object):
             try:
                 if machine.ip in IPNetwork(job["iprange"]):
                     jobid = job["id"]
-                    print("IP %s in range %s - jobid %s" % (machine.ip, job["iprange"], job["id"]))
+                    logger.debug(
+                        "IP in range",
+                        ip=str(machine.ip),
+                        iprange=job["iprange"],
+                        jobid=job["id"],
+                    )
                     break
             except AddrFormatError as e:
-                print("%s - trying by name resolution" % e)
+                logger.debug("addr format error, trying name resolution", error=str(e))
                 # if not, check if iprange resolves to the given machine
                 try:
                     if str(machine.ip) == socket.gethostbyname(job["iprange"]):
                         jobid = job["id"]
-                        print("IP %s == %s - jobid %s" % (machine.ip, job["iprange"], job["id"]))
+                        logger.debug(
+                            "IP matched by name resolution",
+                            ip=str(machine.ip),
+                            iprange=job["iprange"],
+                            jobid=job["id"],
+                        )
                         break
-                except Exception as e:
-                    print("shit happened : %s" % e)
+                except (OSError, socket.gaierror) as e:
+                    logger.warning("name resolution failed", error=str(e))
 
         if jobid:
             ps = scan(str(machine.ip), str(port) if port else job["ports"], job["params"], jobid)
@@ -650,7 +678,7 @@ class Controller(object):
         s.remove(justification, username)
 
 
-class Service(object):
+class Service:
     """
     This class represents a single Service, that is a port on a machine.
     """
@@ -695,19 +723,16 @@ class Service(object):
 
         @param serviceid: Database id of the service.
         """
-        cur = request.db.cursor(mdb.cursors.DictCursor)
-        q = (
-            """SELECT s.id id, m.id mid, port, s.ffdate, s.lsdate, s.product,
+        cur = get_db().cursor(mdb.cursors.DictCursor)
+        q = """SELECT s.id id, m.id mid, port, s.ffdate, s.lsdate, s.product,
             s.version, s.extrainfo,
             c.flipExposed, c.flipClosed
             from machines m inner join services s
             on m.id = s.machineId
             left join criticality c
             on s.id = c.serviceId
-            WHERE s.id=%d"""
-            % serviceid
-        )
-        cur.execute(q)
+            WHERE s.id=%s"""
+        cur.execute(q, (serviceid,))
         row = cur.fetchone()
 
         self.id = row["id"]
@@ -735,77 +760,60 @@ class Service(object):
         @return self
         """
 
-        cur = request.db.cursor()
+        cur = get_db().cursor()
 
         # if product not defined, get generic information about port from
         # /etc/services.
         if not product:
             try:
                 product = socket.getservbyport(portno, "tcp")
-            except:
+            except OSError:
                 pass
 
         q = """INSERT INTO services (port, protocolId, machineId, product,
             extrainfo, version, lsdate, ffdate)
-            VALUES (%d, %d, %d, "%s", "%s", "%s", NOW(), NOW())
-            ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id), lsdate=NOW(); """ % (
-            portno,
-            1,
-            mach.id,
-            product,
-            extrainfo,
-            version,
-        )
-        print(q)
-        cur.execute(q)
+            VALUES (%s, %s, %s, %s, %s, %s, NOW(), NOW())
+            ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id), lsdate=NOW(); """
+        logger.debug("inserting service", query=q)
+        cur.execute(q, (portno, 1, mach.id, product, extrainfo, version))
 
         mid = cur.lastrowid
-        print("Service ID inserted: %s" % mid)
+        logger.info("service inserted", service_id=mid)
 
         ## check if last log entry is negative
-        q = (
-            """select openp from servicelog where serviceid=%d order by id
-             desc limit 1"""
-            % mid
-        )
-        cur.execute(q)
+        q = """select openp from servicelog where serviceid=%s order by id desc limit 1"""
+        cur.execute(q, (mid,))
         try:
             rv = cur.fetchone()[0]
         except (TypeError, KeyError):
             rv = False
         # if it is negative, insert a positive log entry
         if not rv:
-            q = """INSERT INTO servicelog (serviceId, openp, date) values
-                 (%d, %d, NOW()) """ % (mid, 1)
-            cur.execute(q)
+            q = """INSERT INTO servicelog (serviceId, openp, date) values (%s, %s, NOW())"""
+            cur.execute(q, (mid, 1))
 
-        request.db.commit()
+        get_db().commit()
         return Service(mid)
 
     def delete(self):
         """
         deletes this service.
         """
-        cur = request.db.cursor()
-        q = """DELETE FROM criticality WHERE serviceId = %d""" % (self.id)
-        cur.execute(q)
+        cur = get_db().cursor()
+        q = """DELETE FROM criticality WHERE serviceId = %s"""
+        cur.execute(q, (self.id,))
         ## check if last log entry is positive
-        q = (
-            """SELECT openp FROM servicelog WHERE serviceid=%d order by id
-             desc limit 1"""
-            % self.id
-        )
-        cur.execute(q)
+        q = """SELECT openp FROM servicelog WHERE serviceid=%s order by id desc limit 1"""
+        cur.execute(q, (self.id,))
         try:
             rv = cur.fetchone()[0]
         except (TypeError, KeyError):
             rv = False
         # if it is positve, insert a negative log entry
         if rv:
-            q = """INSERT INTO servicelog (serviceId, openp, date) values
-                 (%d, %d, NOW())""" % (self.id, 0)
-            cur.execute(q)
-        request.db.commit()
+            q = """INSERT INTO servicelog (serviceId, openp, date) values (%s, %s, NOW())"""
+            cur.execute(q, (self.id, 0))
+        get_db().commit()
 
     def getMachine(self):
         """
@@ -815,13 +823,15 @@ class Service(object):
         """
         return self.machine
 
-    def inRange(self, r):
+    def inRange(self, r: str | int) -> bool:
         """
         tells if a service is in a specific port range.
 
         @param r: single port number or range, e.g. "1024-65535"
         @return boolean.
         """
+        if self.port is None:
+            raise Exception("service port is not set")
         # single port?
         if isinstance(r, int) or r.isdigit():
             return int(r) == self.port
@@ -831,7 +841,7 @@ class Service(object):
         if m:
             startr = m.group(1)
             endr = m.group(2)
-            return int(startr) <= self.port <= int(endr)
+            return int(startr) <= int(self.port) <= int(endr)
         else:
             raise Exception("cannot determine if %s is in range %s" % (self.port, r))
 
@@ -851,13 +861,15 @@ class Service(object):
             self.critClosed = not self.critClosed
             val = self.critClosed
 
-        cur = request.db.cursor()
-        q = """INSERT INTO criticality (serviceId, %s)
-            VALUES (%d, %d)
-            ON DUPLICATE KEY UPDATE %s=%d""" % (col, self.id, val, col, val)
-        print(q)
-        cur.execute(q)
-        request.db.commit()
+        if col not in ("flipExposed", "flipClosed"):
+            raise ValueError(f"invalid criticality column: {col}")
+        cur = get_db().cursor()
+        q = f"""INSERT INTO criticality (serviceId, {col})
+            VALUES (%s, %s)
+            ON DUPLICATE KEY UPDATE {col}=%s"""
+        logger.debug("updating criticality", query=q)
+        cur.execute(q, (self.id, int(val), int(val)))
+        get_db().commit()
 
     def approve(self, justification, username, neat=True):
         """
@@ -868,22 +880,13 @@ class Service(object):
          is used by the method remove().
         """
 
-        cur = request.db.cursor()
+        cur = get_db().cursor()
         q = """INSERT INTO changelog (serviceId, neat, justification, date,
-            username) VALUES (%d, %d, "%s", NOW(), "%s")""" % (
-            self.id,
-            1 if neat else 0,
-            justification,
-            username,
-        )
-        cur.execute(q)
-        q = (
-            """UPDATE criticality SET flipExposed=0, flipClosed=0
-         WHERE serviceId = %d"""
-            % self.id
-        )
-        cur.execute(q)
-        request.db.commit()
+            username) VALUES (%s, %s, %s, NOW(), %s)"""
+        cur.execute(q, (self.id, 1 if neat else 0, justification, username))
+        q = """UPDATE criticality SET flipExposed=0, flipClosed=0 WHERE serviceId = %s"""
+        cur.execute(q, (self.id,))
+        get_db().commit()
 
     def remove(self, justification, username):
         """
@@ -894,7 +897,7 @@ class Service(object):
         self.approve(justification, username, False)
 
 
-class Machine(object):
+class Machine:
     """
     represents a machine, that is a singular IP adress.
     """
@@ -921,13 +924,9 @@ class Machine(object):
 
         @param machineid: Database id of the machine.
         """
-        cur = request.db.cursor(mdb.cursors.DictCursor)
-        q = (
-            """SELECT id, ip, hostname, lsdate, ffdate FROM machines
-         WHERE id='%d'"""
-            % machineid
-        )
-        cur.execute(q)
+        cur = get_db().cursor(mdb.cursors.DictCursor)
+        q = """SELECT id, ip, hostname, lsdate, ffdate FROM machines WHERE id=%s"""
+        cur.execute(q, (machineid,))
         row = cur.fetchone()
 
         self.id = int(row["id"])
@@ -945,36 +944,31 @@ class Machine(object):
         @param ip: ip address
         @return self
         """
-        cur = request.db.cursor(mdb.cursors.DictCursor)
+        cur = get_db().cursor(mdb.cursors.DictCursor)
         q = """INSERT INTO machines (hostname, ip, rangeId, lsdate, ffdate)
-            VALUES ("%s", "%s", %d, NOW(), NOW())
+            VALUES (%s, %s, %s, NOW(), NOW())
             ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id),
-            hostname="%s", lsdate=NOW(); """ % (name, ip, 1, name)
+            hostname=%s, lsdate=NOW(); """
 
-        print(q)
-        cur.execute(q)
+        logger.debug("inserting machine", query=q)
+        cur.execute(q, (name, ip, 1, name))
 
         mid = cur.lastrowid
-        print("Machine ID inserted: %s" % mid)
+        logger.info("machine inserted", machine_id=mid)
 
         ## check if last log entry is negative
-        q = (
-            """select exposed from machinelog where machineId=%d
-             order by id desc limit 1"""
-            % mid
-        )
-        cur.execute(q)
+        q = """select exposed from machinelog where machineId=%s order by id desc limit 1"""
+        cur.execute(q, (mid,))
         try:
             rv = cur.fetchone()["exposed"]
         except TypeError:
             rv = False
         # if it is negative, insert a positive log entry
         if not rv:
-            q = """INSERT INTO machinelog (machineId, exposed, date)
-                values (%d, %d, NOW()) """ % (mid, 1)
-            cur.execute(q)
+            q = """INSERT INTO machinelog (machineId, exposed, date) values (%s, %s, NOW())"""
+            cur.execute(q, (mid, 1))
 
-        request.db.commit()
+        get_db().commit()
         return Machine(mid)
 
     def getServices(self, exposedOnly=False):
@@ -984,14 +978,12 @@ class Machine(object):
         @param exposedOnly: if true, only return currently exposed services.
         @return list of services.
         """
-        cur = request.db.cursor()
+        cur = get_db().cursor()
         q = """select id from services s inner join servicelogCur l
-             on s.id=l.serviceId where machineId = %d %s""" % (
-            self.id,
-            "AND openp=1" if exposedOnly else "",
-        )
-
-        cur.execute(q)
+             on s.id=l.serviceId where machineId = %s """
+        if exposedOnly:
+            q += "AND openp=1"
+        cur.execute(q, (self.id,))
         rows = cur.fetchall()
         services = []
 
@@ -1006,30 +998,33 @@ class Machine(object):
         Delete this machine and clean up related records.
         """
 
-        print("deleting machine %s" % self.id)
-        cur = request.db.cursor()
+        logger.info("deleting machine", machine_id=self.id)
+        cur = get_db().cursor()
         ## check if last log entry is positive
-        q = (
-            """select exposed from machinelog where machineId=%d
-             order by id desc limit 1"""
-            % self.id
-        )
-        cur.execute(q)
+        q = """select exposed from machinelog where machineId=%s order by id desc limit 1"""
+        cur.execute(q, (self.id,))
         try:
             rv = cur.fetchone()[0]
         except (TypeError, KeyError):
             rv = False
-        # if it is positive, insert a negative log entry
-        if not rv:
-            q = """INSERT INTO machinelog (machineId, exposed, date)
-                 values (%d, %d, NOW())""" % (self.id, 0)
-            cur.execute(q)
+        # if it was exposed, insert a negative log entry
+        if rv:
+            q = """INSERT INTO machinelog (machineId, exposed, date) values (%s, %s, NOW())"""
+            cur.execute(q, (self.id, 0))
 
-        cur.execute(q)
-        request.db.commit()
+        for svc in self.getServices():
+            cur.execute("DELETE FROM criticality WHERE serviceId = %s", (svc.id,))
+            cur.execute("DELETE FROM servicelog WHERE serviceId = %s", (svc.id,))
+            cur.execute("DELETE FROM changelog WHERE serviceId = %s", (svc.id,))
+            cur.execute("DELETE FROM services WHERE id = %s", (svc.id,))
+
+        cur.execute("DELETE FROM machinelog WHERE machineId = %s", (self.id,))
+        q = """DELETE FROM machines WHERE id=%s"""
+        cur.execute(q, (self.id,))
+        get_db().commit()
 
     @staticmethod
-    def inRange(r, ip):
+    def inRange(r: str, ip: str | IPAddress) -> bool:
         """
         returns true if ip is in range r, false otherwise.
 
@@ -1052,7 +1047,7 @@ class Machine(object):
         try:
             rn = IPNetwork(r)
             return IPAddress(ip) in rn
-        except:
+        except (AddrFormatError, ValueError):
             raise Exception("cannot determine if %s is in range %s" % (ip, r))
 
     @staticmethod
@@ -1065,7 +1060,7 @@ class Machine(object):
         @return dictionary IPs/Machine IDs in that range
         """
 
-        cur = request.db.cursor()
+        cur = get_db().cursor()
         q = """select id, ip from machines"""
 
         cur.execute(q)
@@ -1096,7 +1091,7 @@ def scan(target, port_range, extra_options, job_id, sensor="localhost"):
      to be used for scanning (not implemented yet).
     """
     # get db
-    cur = request.db.cursor()
+    cur = get_db().cursor()
 
     # set all IN PROGRESS log entries older than one day to TIMEOUT
     q = """update scanlog set state='TIMEOUT' where state='IN PROGRESS'
@@ -1106,17 +1101,19 @@ def scan(target, port_range, extra_options, job_id, sensor="localhost"):
     # log start of scan
     q = """INSERT INTO scanlog (jobid, state, startdate, iprange, portrange,
          extraoptions)
-        VALUES ("%s", "%s", NOW(), "%s", %s, %s)""" % (
-        "%s" % job_id if job_id else "Null",
-        "IN PROGRESS",
-        target,
-        "%s" % port_range if port_range else "Null",
-        "'%s'" % extra_options if extra_options else "Null",
+        VALUES (%s, %s, NOW(), %s, %s, %s)"""
+    cur.execute(
+        q,
+        (
+            job_id if job_id else None,
+            "IN PROGRESS",
+            target,
+            port_range if port_range else None,
+            extra_options if extra_options else None,
+        ),
     )
-
-    cur.execute(q)
     logid = cur.lastrowid
-    request.db.commit()
+    get_db().commit()
     cur.close()
 
     try:
@@ -1127,19 +1124,19 @@ def scan(target, port_range, extra_options, job_id, sensor="localhost"):
             anyascii(target), anyascii(port_range) if port_range else None, anyascii(extra_options)
         )
 
-        cur = request.db.cursor()
+        cur = get_db().cursor()
 
         # machines
         # remove old machines
         oldmachs = Machine.getIPsInRange(anyascii(target), exposedOnly=True)
-        print("known machines in range %s: %s" % (target, oldmachs))
-        print("machines found by scan: %s" % ps.all_hosts())
+        logger.debug("known machines in range", target=target, machines=oldmachs)
+        logger.debug("machines found by scan", hosts=ps.all_hosts())
         for hostip in [
             x for x in list(oldmachs.keys()) if (False if x in ps.all_hosts() else True)
         ]:
             mach = Machine(oldmachs[hostip])
             for svc in mach.getServices(exposedOnly=True):
-                print("deleting service %s on %s" % (svc.port, hostip))
+                logger.info("deleting service", port=svc.port, host=hostip)
                 svc.delete()
 
         # create new machines, add/remove services
@@ -1171,14 +1168,14 @@ def scan(target, port_range, extra_options, job_id, sensor="localhost"):
                     if svc.port not in portnumbers and (
                         svc.inRange(port_range) if port_range else True
                     ):
-                        print("deleting %s" % svc.port)
+                        logger.info("deleting service", port=svc.port)
                         svc.delete()
 
                 # create new services
                 for portno in portnumbers:
                     port = host["tcp"][portno]
                     if port["state"] == "open":
-                        print("creating %s" % portno)
+                        logger.info("creating service", port=portno)
                         Service.create(
                             mach,
                             portno,
@@ -1191,52 +1188,23 @@ def scan(target, port_range, extra_options, job_id, sensor="localhost"):
         state = "OK"
         message = None
 
-    except:
+    except Exception:
         state = "FAILED"
         message = traceback.format_exc()
-        print(message)
+        logger.exception("scan failed")
 
     finally:
         # log
-        cur = request.db.cursor()
-        q = """UPDATE scanlog SET state="%s", enddate=NOW(), output=%s
-            WHERE ID=%s"""
+        cur = get_db().cursor()
+        q = "UPDATE scanlog SET state=%s, enddate=NOW(), output=%s WHERE id=%s"
+        cur.execute(q, (state, message, logid))
 
-        cur.execute(
-            q, (state, "'%s'" % request.db.escape_string(message) if message else "NULL", logid)
-        )
-
-        request.db.commit()
+        get_db().commit()
 
     return state
 
 
-def initDB(localconf):
-    """
-    inits the database into the bottle request scope.
-    """
-    try:
-        request.cfg = localconf
-    except AttributeError:
-        pass
-    try:
-        request.db = mdb.connect(**request.cfg.db.data)
-    except AttributeError:
-        pass
-
-
-def closeDB():
-    """
-    commit all open database cursors. close the connection.
-    """
-    try:
-        request.db.commit()
-        request.db.close()
-    except request.db.OperationalError:
-        pass
-
-
-def genMessages(exp):
+def genMessages(exp: list[dict[str, Any]]) -> tuple[list[str], list[str]]:
     """
     generates textual descriptions of profile discrepancies.
 
