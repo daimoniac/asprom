@@ -59,9 +59,22 @@ Optional git pre-commit hook:
 ln -sf ../../scripts/check.sh .git/hooks/pre-commit
 ```
 
-Install dev dependencies:
+Install Python dependencies (use a venv on Debian/Ubuntu — system Python is externally managed):
 
 ```bash
+# one-time system packages (Debian/Ubuntu)
+sudo apt install -y python3-venv default-libmysqlclient-dev pkg-config build-essential nmap
+
+# create venv and install deps
+./scripts/setup-venv.sh
+source venv/bin/activate
+```
+
+Or manually:
+
+```bash
+python3 -m venv venv
+source venv/bin/activate   # not: venv/bin/activate
 pip install -r requirements.txt pytest pytest-cov "testcontainers[mysql]" ruff mypy sqlalchemy
 ```
 
@@ -82,7 +95,8 @@ Tests use `ASPROM_TEST_DB_*` environment variables (set automatically in CI via 
 Run the legacy Bottle GUI locally while port-forwarding the production MySQL service from Kubernetes:
 
 ```bash
-pip install -r requirements.txt
+./scripts/setup-venv.sh
+source venv/bin/activate
 ./scripts/dev-prod.sh
 ```
 

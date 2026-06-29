@@ -6,7 +6,7 @@
 #
 # Prerequisites:
 #   - kubectl configured with access to the target cluster
-#   - Python deps installed (pip install -r requirements.txt)
+#   - Python venv with deps (./scripts/setup-venv.sh && source venv/bin/activate)
 #
 # Usage:
 #   ./scripts/dev-prod.sh
@@ -21,6 +21,12 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
+
+if [ -x "$ROOT/venv/bin/python3" ]; then
+  PYTHON="$ROOT/venv/bin/python3"
+else
+  PYTHON="${PYTHON:-python3}"
+fi
 
 KUBE_CONTEXT="${KUBE_CONTEXT:-internal1}"
 KUBE_NAMESPACE="${KUBE_NAMESPACE:-asprom}"
@@ -187,7 +193,7 @@ EOF
 
 wait_for_mysql() {
   local port="$1"
-  python3 - "$port" <<'PY'
+  "$PYTHON" - "$port" <<'PY'
 import socket
 import sys
 import time
@@ -208,7 +214,10 @@ PY
 
 main() {
   require_cmd kubectl
-  require_cmd python3
+  if [ ! -x "$PYTHON" ] && ! command -v "$PYTHON" >/dev/null 2>&1; then
+    echo "error: Python not found ($PYTHON). Run ./scripts/setup-venv.sh first." >&2
+    exit 1
+  fi
 
   echo "Discovering MySQL service (context=$KUBE_CONTEXT, namespace=$KUBE_NAMESPACE)..."
   MYSQL_SERVICE="$(discover_mysql_service)"
@@ -231,7 +240,7 @@ main() {
   wait_for_mysql "$LOCAL_MYSQL_PORT"
   write_local_config "$LOCAL_MYSQL_PORT"
 
-  exec python3 aspromGUI.py
+  exec "$PYTHON" aspromGUI.py
 }
 
 main "$@"
