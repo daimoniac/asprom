@@ -9,6 +9,7 @@ Library for asprom Scripts.
 from __future__ import annotations
 
 import copy
+import os
 import re
 import socket
 import traceback
@@ -60,8 +61,8 @@ class Cfg(Config):
         path to asprom.cfg
         """
         maindir = path.normpath(path.join(path.dirname(path.realpath(__file__)), path.pardir))
-        # read config file
-        super().__init__(maindir + "/etc/asprom.cfg")
+        config_path = os.environ.get("ASPROM_CFG", path.join(maindir, "etc", "asprom.cfg"))
+        super().__init__(config_path)
         self.maindir = maindir
 
 
