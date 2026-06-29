@@ -1,0 +1,17 @@
+# Example config for ./scripts/dev-prod.sh (generated at runtime).
+# Do not commit real credentials. The dev script writes a temp file and sets ASPROM_CFG.
+db: {
+  'host': '127.0.0.1'
+  'port': 3307
+  'user': 'asprom'
+  'passwd': 'REPLACE_ME'
+  'db': 'asprom'
+}
+server: {
+  'listen': '127.0.0.1'
+  'port': 8080
+  'debug': True
+}
+misc: {
+  'url': 'http://127.0.0.1:8080'
+}

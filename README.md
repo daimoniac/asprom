@@ -77,3 +77,24 @@ Set `ASPROM_RUN_MIGRATIONS=1` in the asprom container to run `alembic upgrade he
 
 Tests use `ASPROM_TEST_DB_*` environment variables (set automatically in CI via GitHub Actions MySQL service). Locally, a MySQL instance on `127.0.0.1` with database `asprom_test` is used by default.
 
+### Local dev against production Kubernetes DB
+
+Run the legacy Bottle GUI locally while port-forwarding the production MySQL service from Kubernetes:
+
+```bash
+pip install -r requirements.txt
+./scripts/dev-prod.sh
+```
+
+The script discovers the MySQL service name via `kubectl` (default context `internal1`, namespace `asprom`), port-forwards it to `127.0.0.1:3307`, and starts `aspromGUI.py` on [http://127.0.0.1:8080](http://127.0.0.1:8080).
+
+Override discovery if needed:
+
+```bash
+KUBE_CONTEXT=internal1 KUBE_NAMESPACE=asprom MYSQL_SERVICE=mysql ./scripts/dev-prod.sh
+```
+
+Set `ASPROM_DB_PASSWORD` if the script cannot read credentials from a Kubernetes secret.
+
+**Warning:** this connects to production data. Scans and baseline changes affect live systems.
+
