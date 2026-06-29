@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [master, "cursor/**"]
+  pull_request:
+    branches: [master]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: asprom
+          MYSQL_USER: asprom
+          MYSQL_PASSWORD: asprom
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      ASPROM_TEST_DB_HOST: 127.0.0.1
+      ASPROM_TEST_DB_PORT: 3306
+      ASPROM_TEST_DB_USER: asprom
+      ASPROM_TEST_DB_PASSWORD: asprom
+      ASPROM_TEST_DB_NAME: asprom
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y default-libmysqlclient-dev build-essential pkg-config
+
+      - name: Install Python dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pytest pytest-cov "testcontainers[mysql]" ruff mypy
+
+      - name: Run check script
+        env:
+          ASPROM_COV_FAIL_UNDER: "70"
+          ASPROM_RUN_MYPY: "1"
+        run: ./scripts/check.sh
+
+      - name: Docker build smoke test
+        run: docker build .

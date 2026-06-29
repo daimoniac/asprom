@@ -43,3 +43,72 @@ Access metrics about open ports and baseline deviations at:
 ### Nagios Integration
 Use `aspromNagiosCheck.py` as a standard Nagios plugin to receive active alerts. The plugin will return CRITICAL status when unauthorized services are detected.
 
+## Development
+
+[![CI](https://github.com/daimoniac/asprom/actions/workflows/ci.yml/badge.svg)](https://github.com/daimoniac/asprom/actions/workflows/ci.yml)
+
+Run the full project check before every commit:
+
+```bash
+ASPROM_COV_FAIL_UNDER=70 ./scripts/check.sh
+```
+
+Optional git pre-commit hook:
+
+```bash
+ln -sf ../../scripts/check.sh .git/hooks/pre-commit
+```
+
+Install Python dependencies (use a venv on Debian/Ubuntu — system Python is externally managed):
+
+```bash
+# one-time system packages (Debian/Ubuntu)
+sudo apt install -y python3-venv default-libmysqlclient-dev pkg-config build-essential nmap
+
+# create venv and install deps
+./scripts/setup-venv.sh
+source venv/bin/activate
+```
+
+Or manually:
+
+```bash
+python3 -m venv venv
+source venv/bin/activate   # not: venv/bin/activate
+pip install -r requirements.txt pytest pytest-cov "testcontainers[mysql]" ruff mypy sqlalchemy
+```
+
+### Database migrations
+
+- **Fresh Docker installs:** schema applied via `db/ddl.sql` on first MySQL container start.
+- **Existing installs:** run `alembic stamp 001` then `alembic upgrade head`.
+- **Future schema changes:** add Alembic revisions only.
+
+Set `ASPROM_RUN_MIGRATIONS=1` in the asprom container to run `alembic upgrade head` on startup.
+
+### Integration tests
+
+Tests use `ASPROM_TEST_DB_*` environment variables (set automatically in CI via GitHub Actions MySQL service). Locally, a MySQL instance on `127.0.0.1` with database `asprom_test` is used by default.
+
+### Local dev against production Kubernetes DB
+
+Run the legacy Bottle GUI locally while port-forwarding the production MySQL service from Kubernetes:
+
+```bash
+./scripts/setup-venv.sh
+source venv/bin/activate
+./scripts/dev-prod.sh
+```
+
+The script discovers the MySQL service name via `kubectl` (default context `internal1`, namespace `asprom`), port-forwards it to `127.0.0.1:3307`, and starts `aspromGUI.py` on [http://127.0.0.1:8080](http://127.0.0.1:8080).
+
+Override discovery if needed:
+
+```bash
+KUBE_CONTEXT=internal1 KUBE_NAMESPACE=asprom MYSQL_SERVICE=mysql ./scripts/dev-prod.sh
+```
+
+Set `ASPROM_DB_PASSWORD` if the script cannot read credentials from a Kubernetes secret.
+
+**Warning:** this connects to production data. Scans and baseline changes affect live systems.
+
