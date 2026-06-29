@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [master, "cursor/**"]
+  pull_request:
+    branches: [master]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y default-libmysqlclient-dev build-essential pkg-config
+
+      - name: Install Python dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pytest pytest-cov "testcontainers[mysql]" ruff mypy
+
+      - name: Run check script
+        run: ./scripts/check.sh
+
+      - name: Docker build smoke test
+        run: docker build .

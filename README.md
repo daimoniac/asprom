@@ -43,3 +43,23 @@ Access metrics about open ports and baseline deviations at:
 ### Nagios Integration
 Use `aspromNagiosCheck.py` as a standard Nagios plugin to receive active alerts. The plugin will return CRITICAL status when unauthorized services are detected.
 
+## Development
+
+Run the full project check before every commit:
+
+```bash
+./scripts/check.sh
+```
+
+Optional git pre-commit hook:
+
+```bash
+ln -sf ../../scripts/check.sh .git/hooks/pre-commit
+```
+
+Install dev dependencies:
+
+```bash
+pip install -r requirements.txt pytest pytest-cov "testcontainers[mysql]" ruff mypy
+```
+
