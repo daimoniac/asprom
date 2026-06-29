@@ -1,32 +1,50 @@
-'''
+"""
 Created on Sep 05, 2024
 
 @author stefankn
-@namespace asprom.aspromNagiosCheck
+@namespace asprom.aspromMetrics
 small and nice metrics server for asprom
-'''
-from inc.asprom import initDB, closeDB, AspromModel, Cfg
+"""
+
 from time import sleep
-from prometheus_client import start_http_server, Gauge
-from pprint import pprint
 
-localconf = Cfg()
+from prometheus_client import Gauge, start_http_server
 
-alertsExposed = Gauge('alerts_exposed', 'These Ports are unintentionally open and therefore to be checked with the highest priority.')
-alertsClosed = Gauge('alerts_closed', 'These Ports are unintentionally open and therefore to be checked with the highest priority.')
+from inc.asprom import AspromModel, Cfg, initDB
+from inc.logging import configure_logging, get_logger
 
-initDB(localconf)
-M = AspromModel()
+configure_logging()
+logger = get_logger(__name__)
+
+alertsExposed = Gauge(
+    "alerts_exposed",
+    "These Ports are unintentionally open and therefore to be checked with the highest priority.",
+)
+alertsClosed = Gauge(
+    "alerts_closed",
+    "These Ports are unintentionally open and therefore to be checked with the highest priority.",
+)
+
+M = None
+
+
+def _ensure_model():
+    global M
+    if M is None:
+        initDB(Cfg())
+        M = AspromModel()
+    return M
+
 
 def refreshMetrics():
+    model = _ensure_model()
+    alertsExposed.set(len(model.getAlertsExposed()))
+    alertsClosed.set(len(model.getAlertsClosed()))
 
-    alertsExposed.set(len(M.getAlertsExposed()))
-    alertsClosed.set(len(M.getAlertsClosed()))
 
-if __name__ == '__main__':
-
-    pprint("starting asprom metrics server")
-    # Start up the server to expose the metrics.
+if __name__ == "__main__":
+    logger.info("starting asprom metrics server")
+    _ensure_model()
     start_http_server(5000)
 
     while True:
