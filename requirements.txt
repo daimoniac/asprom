@@ -8,3 +8,5 @@ config==0.4.2
 croniter==3.0.3
 prometheus-client==0.20.0
 python-nmap==0.7.1
+structlog>=24.0.0
+alembic>=1.13.0
