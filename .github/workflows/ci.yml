@@ -48,6 +48,9 @@ jobs:
           pip install pytest pytest-cov "testcontainers[mysql]" ruff mypy
 
       - name: Run check script
+        env:
+          ASPROM_COV_FAIL_UNDER: "70"
+          ASPROM_RUN_MYPY: "1"
         run: ./scripts/check.sh
 
       - name: Docker build smoke test
