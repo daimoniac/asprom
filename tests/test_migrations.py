@@ -2,8 +2,11 @@
 
 import os
 import subprocess
+from pathlib import Path
 
 import pytest
+
+ROOT = Path(__file__).resolve().parent.parent
 
 
 @pytest.mark.integration
@@ -20,7 +23,7 @@ def test_alembic_upgrade_head(mysql_params):
     )
     result = subprocess.run(
         ["alembic", "upgrade", "head"],
-        cwd="/workspace",
+        cwd=ROOT,
         env=env,
         capture_output=True,
         text=True,
