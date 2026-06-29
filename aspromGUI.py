@@ -11,6 +11,10 @@ Also, it orchestrates URL calls between the model, view and controller classes.
 from bottle import abort, hook, post, redirect, request, response, route, run, static_file, template
 
 from inc.asprom import AspromModel, AspromScheduleModel, Cfg, Controller, Machine, closeDB, initDB
+from inc.logging import configure_logging, get_logger
+
+configure_logging()
+logger = get_logger(__name__)
 
 # Variable definitions
 
@@ -38,7 +42,7 @@ def before_request():
     username = None
     try:
         username = request.get_header("X-Forwarded-User", request.auth[0])
-    except:
+    except (TypeError, AttributeError, KeyError):
         pass
 
     p = request.path

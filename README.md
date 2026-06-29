@@ -45,10 +45,12 @@ Use `aspromNagiosCheck.py` as a standard Nagios plugin to receive active alerts.
 
 ## Development
 
+[![CI](https://github.com/daimoniac/asprom/actions/workflows/ci.yml/badge.svg)](https://github.com/daimoniac/asprom/actions/workflows/ci.yml)
+
 Run the full project check before every commit:
 
 ```bash
-./scripts/check.sh
+ASPROM_COV_FAIL_UNDER=70 ./scripts/check.sh
 ```
 
 Optional git pre-commit hook:
@@ -60,6 +62,18 @@ ln -sf ../../scripts/check.sh .git/hooks/pre-commit
 Install dev dependencies:
 
 ```bash
-pip install -r requirements.txt pytest pytest-cov "testcontainers[mysql]" ruff mypy
+pip install -r requirements.txt pytest pytest-cov "testcontainers[mysql]" ruff mypy sqlalchemy
 ```
+
+### Database migrations
+
+- **Fresh Docker installs:** schema applied via `db/ddl.sql` on first MySQL container start.
+- **Existing installs:** run `alembic stamp 001` then `alembic upgrade head`.
+- **Future schema changes:** add Alembic revisions only.
+
+Set `ASPROM_RUN_MIGRATIONS=1` in the asprom container to run `alembic upgrade head` on startup.
+
+### Integration tests
+
+Tests use `ASPROM_TEST_DB_*` environment variables (set automatically in CI via GitHub Actions MySQL service). Locally, a MySQL instance on `127.0.0.1` with database `asprom_test` is used by default.
 

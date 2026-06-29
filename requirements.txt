@@ -10,3 +10,4 @@ prometheus-client==0.20.0
 python-nmap==0.7.1
 structlog>=24.0.0
 alembic>=1.13.0
+sqlalchemy>=2.0.0
