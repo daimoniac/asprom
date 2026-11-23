@@ -5,8 +5,9 @@ ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
 RUN chmod +x /tini
 COPY requirements.txt /tmp/
 RUN apt-get update && \
-    apt-get -y install cron nmap patch libmariadb3 python3-minimal python3-pip \
-      default-libmysqlclient-dev build-essential pkg-config && \
+    apt-get -y install --no-install-recommends cron nmap patch libmariadb3 \
+      python3-minimal python3-pip python3-dev default-libmysqlclient-dev \
+      build-essential pkg-config && \
     pip install --break-system-packages -r /tmp/requirements.txt && \
     apt-get -y autoremove python3-dev python3-pip default-libmysqlclient-dev \
       build-essential pkg-config && \
